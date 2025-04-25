@@ -1,17 +1,25 @@
-//
-//  MIHFApp.swift
-//  MIHF
-//
-//  Created by Alexey Drobot on 24.04.2025.
-//
-
 import SwiftUI
 
 @main
-struct MIHFApp: App {
+struct CourseAppApp: App {
+    @StateObject private var appState = AppState()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootRouter()
+                .environmentObject(appState)
+        }
+    }
+}
+
+struct RootRouter: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        switch appState.route {
+        case .splash: SplashView()
+        case .auth:   AuthView()
+        case .home:   HomeView()
         }
     }
 }

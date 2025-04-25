@@ -1,10 +1,3 @@
-//
-//  MIHFUITests.swift
-//  MIHFUITests
-//
-//  Created by Alexey Drobot on 24.04.2025.
-//
-
 import XCTest
 
 final class MIHFUITests: XCTestCase {
