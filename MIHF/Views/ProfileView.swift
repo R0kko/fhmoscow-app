@@ -1,74 +1,107 @@
 import SwiftUI
 
 struct ProfileView: View {
+    // MARK: - Dependencies
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var showLogoutConfirm = false
+    @State private var showEmailSheet = false
+    @State private var showPasswordSheet = false
 
-    private var user: User {
-        appState.currentUser!   // здесь безопасно, экран доступен только после логина
-    }
-
+    // MARK: - Computed user
+    private var user: User? { appState.currentUser }
+    
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("Основное")) {
-                    LabeledContent("Имя", value: user.firstName)
-                    LabeledContent("Фамилия", value: user.lastName)
-                    if let middle = user.middleName {           // поле может быть nil
-                        LabeledContent("Отчество", value: middle)
-                    }
-                    if let dob = user.dateOfBirth {
-                        LabeledContent("Дата рождения", value: dob.formatted(date: .abbreviated, time: .omitted))
-                    }
-                }
+                if let user = user {
 
-                Section(header: Text("Контакты")) {
-                    LabeledContent("Телефон", value: format(user.phone))
-                    if let email = user.email {
-                        LabeledContent("E-mail", value: email)
+                    Section(header: Text("Основное")) {
+                        LabeledContent("Имя", value: user.firstName)
+                        LabeledContent("Фамилия", value: user.lastName)
+                        if let middle = user.middleName { LabeledContent("Отчество", value: middle) }
+                        if let dob = user.dateOfBirth {
+                            LabeledContent("Дата рождения", value: formatDate(dob))
+                        }
                     }
-                }
 
-                Section(header: Text("Роли")) {
-                    ForEach(user.roles, id: \.alias) { role in
-                        Text("\(role.name)  (\(role.alias))")
+                    Section(header: Text("Контакты")) {
+                        LabeledContent("Телефон", value: formattedPhone(user.phone))
+                        if let email = user.email {
+                            LabeledContent("E‑mail", value: email)
+                        }
                     }
-                }
 
-                Section {
-                    Button("Выйти из аккаунта", role: .destructive) {
-                        appState.logout()
+                    Section(header: Text("Роли")) {
+                        ForEach(user.roles) { role in
+                            Text("\(role.name)")
+                        }
+                    }
+
+                    Section {
+                        Button { showEmailSheet = true } label: { Text("Изменить e‑mail") }
+                        Button { showPasswordSheet = true } label: { Text("Сбросить пароль") }
+                    }
+
+                    Section {
+                        Button("Выйти из аккаунта", role: .destructive) {
+                            showLogoutConfirm = true
+                        }
                     }
                 }
             }
             .navigationTitle("Профиль")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") { dismiss() }
+            .alert("Вы действительно хотите выйти?", isPresented: $showLogoutConfirm) {
+                Button("Выйти", role: .destructive) {
+                    appState.logout()
                 }
+                Button("Отмена", role: .cancel) { }
             }
+            .sheet(isPresented: $showEmailSheet) { EditEmailView().environmentObject(appState) }
+            .sheet(isPresented: $showPasswordSheet) { ChangePasswordView().environmentObject(appState) }
         }
     }
 
-    // +7 (XXX) XXX-XX-XX
-    private func format(_ digits: String) -> String {
-        var d = digits.filter(\.isNumber)
-        if d.hasPrefix("8") { d.replaceSubrange(d.startIndex...d.startIndex, with: "7") }
-        d = String(d.prefix(11)).padding(toLength: 11, withPad: "•", startingAt: 0)
-        return "+\(d[0]) (\(d[1...3])) \(d[4...6])-\(d[7...8])-\(d[9...10])"
+    // MARK: - Helpers
+    private func formattedPhone(_ raw: String) -> String {
+        var digits = raw.filter { $0.isNumber }
+        if digits.first == "8" { digits.replaceSubrange(digits.startIndex...digits.startIndex, with: "7") }
+        if digits.count < 11 {
+            digits.append(contentsOf: String(repeating: "•", count: 11 - digits.count))
+        }
+        let c = Array(digits.prefix(11))
+        guard c.count == 11 else { return raw }
+        return "+\(c[0]) (\(c[1])\(c[2])\(c[3])) \(c[4])\(c[5])\(c[6])-\(c[7])\(c[8])-\(c[9])\(c[10])"
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        localized(date)
+    }
+
+    private func localized(_ date: Date) -> String {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "ru_RU")
+        df.dateStyle = .long
+        return df.string(from: date)
     }
 }
 
 #Preview {
-    let u = User(id: "0",
-                 firstName: "Алексей",
-                 lastName: "Иванов",
-                 email: "user@mail.ru",
-                 phone: "79001234567",
-                 dateOfBirth: "1998-05-12",
-                 middleName: nil,
-                 roles: [.init(name: "Администратор", alias: "ADMIN")])
-    let a = AppState()
-    a.currentUser = u
-    return ProfileView().environmentObject(a)
+    ProfileView()
+        .environmentObject({
+            let roles = [Role(name: "Администратор", alias: "ADMIN"),
+                         Role(name: "Тренер",        alias: "COACH")]
+            let dob = Calendar.current.date(from: DateComponents(year: 1998, month: 5, day: 12))!
+            let user = User(id: "0",
+                            firstName: "Алексей",
+                            lastName: "Иванов",
+                            middleName: "Сергеевич",
+                            dateOfBirth: dob,
+                            email: "user@mail.ru",
+                            phone: "79001234567",
+                            roles: roles)
+            let state = AppState()
+            state.currentUser = user
+            return state
+        }())
 }

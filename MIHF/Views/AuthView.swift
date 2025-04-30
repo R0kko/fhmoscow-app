@@ -170,11 +170,23 @@ struct AuthView: View {
             do {
                 let digits = phone.filter { $0.isNumber }
                 let (token, dto) = try await API.login(phone: digits, password: password)
+
+                let roles = dto.roles?.map { Role(name: $0.name, alias: $0.alias) } ?? []
+
+                // Конвертируем ISO‑8601 строку даты рождения → Date?
+                let dob: Date? = {
+                    guard let iso = dto.date_of_birth else { return nil }
+                    return ISO8601DateFormatter().date(from: iso)
+                }()
+
                 let user = User(id: dto.id,
-                                 firstName: dto.first_name,
-                                 lastName: dto.last_name,
-                                 email: dto.email,
-                                 phone: dto.phone)
+                                firstName: dto.first_name,
+                                lastName: dto.last_name,
+                                middleName: dto.middle_name,
+                                dateOfBirth: dob,
+                                email: dto.email,
+                                phone: dto.phone,
+                                roles: roles)
                 await MainActor.run {
                     appState.saveSession(token: token, user: user)
                     isLoading = false

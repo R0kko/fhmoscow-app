@@ -1,20 +1,30 @@
 import SwiftUI
 
 struct HomeView: View {
-    // MARK: - Deps
+    // MARK: - Dependencies
     @EnvironmentObject private var appState: AppState
     @State private var isAppeared = false
+    @State private var showProfile = false
+    @State private var showPlayers = false
 
-    private let brandText = Color(hex: 0x122859)
+    // MARK: - Brand
+    private let brandText      = Color(hex: 0x122859)
     private let brandBackground = Color(hex: 0xF7F8FA)
 
     // MARK: - Menu stub
-    private struct MenuItem: Identifiable { let id = UUID(); let title: String; let systemImage: String }
+    private struct MenuItem: Identifiable {
+        enum Destination { case players }
+        let id = UUID()
+        let title: String
+        let systemImage: String
+        let destination: Destination?
+    }
     private let menu: [MenuItem] = [
-        .init(title: "Новости",   systemImage: "newspaper"),
-        .init(title: "Календарь", systemImage: "calendar"),
-        .init(title: "Задачи",    systemImage: "checkmark.circle"),
-        .init(title: "Документы", systemImage: "doc.text")
+        .init(title: "Игроки",    systemImage: "person.3", destination: .players),
+        .init(title: "Новости",   systemImage: "newspaper", destination: nil),
+        .init(title: "Календарь", systemImage: "calendar",  destination: nil),
+        .init(title: "Задачи",    systemImage: "checkmark.circle", destination: nil),
+        .init(title: "Документы", systemImage: "doc.text", destination: nil)
     ]
 
     private var ruDateString: String {
@@ -28,8 +38,6 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                Spacer()
-                Spacer()
                 VStack(alignment: .leading, spacing: 24) {
                     greetingHeader
                     menuGrid
@@ -43,6 +51,14 @@ struct HomeView: View {
             }
             .background(brandBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(isPresented: $showProfile) {
+                ProfileView()
+                    .environmentObject(appState)
+            }
+            .navigationDestination(isPresented: $showPlayers) {
+                PlayersListView()
+                    .environmentObject(appState)
+            }
         }
     }
 
@@ -55,13 +71,10 @@ struct HomeView: View {
                     .foregroundColor(brandText)
                 Text(ruDateString)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(brandText.opacity(0.6))
             }
             Spacer()
-            // Профиль
-            Button {
-                // TODO: Navigate to profile screen
-            } label: {
+            Button { showProfile = true } label: {
                 Image(systemName: "person.circle.fill")
                     .font(.title2)
                     .foregroundColor(brandText)
@@ -72,19 +85,26 @@ struct HomeView: View {
     }
 
     private var menuGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2), spacing: 16) {
+        LazyVGrid(columns: Array(repeating: .init(.flexible(), spacing: 16), count: 2), spacing: 16) {
             ForEach(menu) { item in
-                VStack(spacing: 12) {
-                    Image(systemName: item.systemImage)
-                        .font(.title)
-                        .foregroundColor(brandText)
-                    Text(item.title)
-                        .font(.body.weight(.medium))
-                        .foregroundColor(brandText)
+                Button {
+                    if item.destination == .players {
+                        showPlayers = true
+                    }
+                } label: {
+                    VStack(spacing: 12) {
+                        Image(systemName: item.systemImage)
+                            .font(.title)
+                            .foregroundColor(brandText)
+                        Text(item.title)
+                            .font(.body.weight(.medium))
+                            .foregroundColor(brandText)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 100)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
                 }
-                .frame(maxWidth: .infinity, minHeight: 100)
-                .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
+                .buttonStyle(PlainButtonStyle())
             }
         }
     }
@@ -94,11 +114,15 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Разделы приложения")
                 .font(.headline)
+                .foregroundColor(brandText)
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white)
                 .frame(height: 160)
                 .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
-                .overlay(Text("Плейсхолдер под виджеты / ленту").foregroundColor(brandText.opacity(0.6)))
+                .overlay(
+                    Text("Плейсхолдер под виджеты / ленту")
+                        .foregroundColor(brandText.opacity(0.6))
+                )
         }
         .padding(.top, 8)
     }
@@ -118,12 +142,11 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .environmentObject({
-            let a = AppState()
-            a.currentUser = User(id: "1",
-                                 firstName: "Алексей",
-                                 lastName: "Иванов",
-                                 email: nil,
-                                 phone: "")
-            return a
+            let roles = [Role(name: "Администратор", alias: "ADMIN")]
+            let dob = Calendar.current.date(from: DateComponents(year: 2000, month: 1, day: 1))!
+            let user = User(id: "1", firstName: "Алексей", lastName: "Иванов", middleName: nil, dateOfBirth: dob, email: "user@mail.ru", phone: "79104055190", roles: roles)
+            let state = AppState()
+            state.currentUser = user
+            return state
         }())
 }
