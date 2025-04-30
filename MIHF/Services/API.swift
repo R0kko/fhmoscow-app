@@ -1,4 +1,9 @@
 import Foundation
+import Combine
+
+extension Notification.Name {
+    static let userShouldLogout = Notification.Name("userShouldLogout")
+}
 
 enum APIError: LocalizedError {
     case invalidCredentials
@@ -118,7 +123,12 @@ struct API {
                     throw APIError.decoding
                 }
 
-            case 401, 400:
+            case 401, 403:
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .userShouldLogout, object: nil)
+                }
+                throw APIError.invalidCredentials
+            case 400:
                 throw APIError.invalidCredentials
             default:
                 throw APIError.serverStatus(http.statusCode)

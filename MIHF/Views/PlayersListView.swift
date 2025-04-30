@@ -1,20 +1,31 @@
+import SwiftUICore
 import SwiftUI
 
-/// DTO, совпадающий с ответом /players (частичный)
 struct PlayerRowDTO: Identifiable, Decodable {
     let id: Int
     let surname: String
     let name: String
     let patronymic: String?
-    let dateOfBirth: String? // ISO‑8601, приходит от API
+    let dateOfBirth: String?
     let photo: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, surname, name, patronymic, photo
+        case dateOfBirth = "date_of_birth"
+    }
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
 
     var fio: String { [surname, name, patronymic].compactMap { $0 }.joined(separator: " ") }
     var birthFormatted: String {
-        guard let iso = dateOfBirth, let date = ISO8601DateFormatter().date(from: iso) else { return "" }
+        guard let iso = dateOfBirth, let date = Self.isoFormatter.date(from: iso) else { return "" }
         let df = DateFormatter()
         df.locale = Locale(identifier: "ru_RU")
-        df.dateStyle = .medium
+        df.dateFormat = "dd.MM.yyyy"
         return df.string(from: date)
     }
 }
@@ -48,7 +59,7 @@ struct PlayersListView: View {
                 Text("Player #\(id)") // TODO: PlayerDetailView
             }
         }
-        .task { await fetchPlayers() } // первоначальная загрузка
+        .task { await fetchPlayers() }
     }
 
     private var loadingRow: some View {
@@ -63,7 +74,7 @@ struct PlayersListView: View {
         defer { isLoading = false }
 
         do {
-            let result: PlayersListResponse = try await API.searchPlayers(query, token: token, page: 1)
+            let result = try await PlayersListService.search(query: query, page: 1, token: token)
             self.players = result.data
             self.page = result.page
             self.total = result.total
@@ -79,7 +90,7 @@ struct PlayersListView: View {
         do {
             let next = page + 1
             guard let token = appState.token else { return }
-            let result: PlayersListResponse = try await API.searchPlayers(query, token: token, page: next)
+            let result = try await PlayersListService.search(query: query, page: next, token: token)
             self.players += result.data
             self.page = next
             self.total = result.total
@@ -108,26 +119,12 @@ struct PlayersListView: View {
     }
 }
 
-// MARK: - Networking stub
+// MARK: - DTO & Response
 
 struct PlayersListResponse: Decodable {
     let data: [PlayerRowDTO]
     let page: Int
     let total: Int
-}
-
-extension API {
-    /// GET /players?search="query"
-    static func searchPlayers(_ query: String, token: String, page: Int = 1) async throws -> PlayersListResponse {
-        var comps = URLComponents(url: base.appendingPathComponent("/players"), resolvingAgainstBaseURL: false)!
-        var queryItems: [URLQueryItem] = []
-        if !query.isEmpty { queryItems.append(URLQueryItem(name: "search", value: query)) }
-        queryItems.append(URLQueryItem(name: "page", value: "\(page)"))
-        comps.queryItems = queryItems
-        var request = URLRequest(url: comps.url!)
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        return try await perform(request: request, decodeAs: PlayersListResponse.self)
-    }
 }
 
 extension AppState {

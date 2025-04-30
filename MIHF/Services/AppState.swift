@@ -47,10 +47,11 @@ final class AppState: ObservableObject {
     // MARK: - Published state
     @Published var route: Route = .splash
     @Published var currentUser: User? = nil
-    @Published private(set) var token: String? = nil
+    @Published var token: String? = nil
 
     // MARK: - Private
     private let keychain = KeychainService()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Bootstrap (called from SplashView)
     func bootstrap() {
@@ -72,6 +73,13 @@ final class AppState: ObservableObject {
             // 3) Решаем, какой экран показать
             let hasSession = (self.token != nil) && (currentUser != nil)
             route = hasSession ? .home : .auth
+
+            NotificationCenter.default.publisher(for: .userShouldLogout)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.logout()
+                }
+                .store(in: &cancellables)
         }
     }
 
