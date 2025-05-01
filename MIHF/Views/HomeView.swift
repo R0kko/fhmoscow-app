@@ -6,6 +6,7 @@ struct HomeView: View {
     @State private var isAppeared = false
     @State private var showProfile = false
     @State private var showPlayers = false
+    @State private var showTournaments = false
 
     // MARK: - Brand
     private let brandText      = Color(hex: 0x122859)
@@ -13,7 +14,7 @@ struct HomeView: View {
 
     // MARK: - Menu stub
     private struct MenuItem: Identifiable {
-        enum Destination { case players }
+        enum Destination { case players, tournaments }
         let id = UUID()
         let title: String
         let systemImage: String
@@ -21,6 +22,7 @@ struct HomeView: View {
     }
     private let menu: [MenuItem] = [
         .init(title: "Игроки",    systemImage: "person.3", destination: .players),
+        .init(title: "Турниры",   systemImage: "trophy",   destination: .tournaments),
         .init(title: "Новости",   systemImage: "newspaper", destination: nil),
         .init(title: "Календарь", systemImage: "calendar",  destination: nil),
         .init(title: "Задачи",    systemImage: "checkmark.circle", destination: nil),
@@ -59,6 +61,10 @@ struct HomeView: View {
                 PlayersListView()
                     .environmentObject(appState)
             }
+            .navigationDestination(isPresented: $showTournaments) {
+                TournamentListView(appState: appState)
+                    .environmentObject(appState)
+            }
         }
     }
 
@@ -88,8 +94,13 @@ struct HomeView: View {
         LazyVGrid(columns: Array(repeating: .init(.flexible(), spacing: 16), count: 2), spacing: 16) {
             ForEach(menu) { item in
                 Button {
-                    if item.destination == .players {
+                    switch item.destination {
+                    case .players:
                         showPlayers = true
+                    case .tournaments:
+                        showTournaments = true
+                    case .none:
+                        break
                     }
                 } label: {
                     VStack(spacing: 12) {
