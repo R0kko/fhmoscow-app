@@ -42,7 +42,11 @@ struct GroupsListView: View {
         .listStyle(.plain)
         .navigationTitle(stage.name)
         .navigationDestination(for: GroupRoute.self) { route in
-            Text("Группа «\(route.name)»") // TODO: GroupDetailView или список матчей
+            TournamentTableView(
+                groupId: route.id,
+                groupName: route.name,
+                appState: appState
+            )
         }
         .refreshable { await vm.reload() }
         .task { await vm.reload() }
