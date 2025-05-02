@@ -1,13 +1,16 @@
 import SwiftUI
 
 @main
-struct CourseAppApp: App {
+struct MIHFApp: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {
         WindowGroup {
-            RootRouter()
-                .environmentObject(appState)
+            NavigationStack {
+                RootRouter()
+            }
+            .environmentObject(appState)
+            .task { await appState.bootstrapAsync() } 
         }
     }
 }

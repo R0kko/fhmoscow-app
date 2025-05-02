@@ -1,31 +1,42 @@
-//
-//  TournamentDetailService.swift
-//  MIHF
-//
-//  Created by Alexey Drobot on 02.05.2025.
-//
-
 import Foundation
 
-/// Ответ детального турнира (можно расширить, если API вернёт больше полей)
-struct TournamentDetailResponse: Decodable {
-    let data: TournamentDetailDTO
-}
+final class TournamentDetailService: TournamentDetailServiceProtocol {
+    func load(id: Int, token: String?) async throws -> TournamentDetailDTO {
+        var url = API.base
+        url.appendPathComponent("/tournaments/\(id)")
 
-/// Сервис работы с детальной информацией о турнире
-enum TournamentDetailService {
-
-    /// Загрузить детальную информацию по id турнира
-    /// - Parameters:
-    ///   - id: идентификатор турнира
-    ///   - token: JWT token из `AppState.token`
-    static func get(id: Int, token: String) async throws -> TournamentDetailDTO {
-        let url = API.base.appendingPathComponent("/tournaments/\(id)")
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let token = token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
-        let response: TournamentDetailResponse = try await API.perform(request: request, decodeAs: TournamentDetailResponse.self)
-        return response.data
+        let (data, _) = try await URLSession.shared.data(for: request)
+
+        #if DEBUG
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("🟢 [Tournament] raw JSON:", jsonString)
+        }
+        #endif
+
+        let decoder = JSONDecoder()
+        // Поддерживаем ISO‑8601 как с миллисекундами, так и без них
+        let isoWithFraction = ISO8601DateFormatter()
+        isoWithFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let isoPlain = ISO8601DateFormatter()
+
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            if let d = isoWithFraction.date(from: raw) ?? isoPlain.date(from: raw) {
+                return d
+            }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported ISO‑8601 date: \(raw)"
+            )
+        }
+
+        return try decoder.decode(TournamentDetailDTO.self, from: data)
     }
 }

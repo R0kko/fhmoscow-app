@@ -30,6 +30,11 @@ struct PlayerRowDTO: Identifiable, Decodable {
     }
 }
 
+/// Уникальный маршрут для перехода к деталям игрока
+private struct PlayerRoute: Hashable {
+    let id: Int
+}
+
 struct PlayersListView: View {
     @EnvironmentObject private var appState: AppState
     @State private var query: String = ""
@@ -41,8 +46,7 @@ struct PlayersListView: View {
     @State private var error: String?
 
     var body: some View {
-        NavigationStack {
-            playersList
+        playersList
             .navigationTitle("Игроки")
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always))
             .onSubmit(of: .search) { Task { await fetchPlayers() } }
@@ -55,11 +59,10 @@ struct PlayersListView: View {
             .alert("Ошибка", isPresented: .constant(error != nil), actions: {
                 Button("OK") { error = nil }
             }, message: { Text(error ?? "") })
-            .navigationDestination(for: Int.self) { id in
-                Text("Player #\(id)") // TODO: PlayerDetailView
+            .navigationDestination(for: PlayerRoute.self) { route in
+                Text("Player #\(route.id)") // TODO: PlayerDetailView
             }
-        }
-        .task { await fetchPlayers() }
+            .task { await fetchPlayers() }
     }
 
     private var loadingRow: some View {
@@ -106,7 +109,7 @@ struct PlayersListView: View {
                 loadingRow
             }
             ForEach(players) { player in
-                NavigationLink(value: player.id) {
+                NavigationLink(value: PlayerRoute(id: player.id)) {
                     PlayerRowView(player: player)
                 }
                 .task {

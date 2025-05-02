@@ -52,40 +52,56 @@ final class AppState: ObservableObject {
     // MARK: - Private
     private let keychain = KeychainService()
     private var cancellables = Set<AnyCancellable>()
+    /// Помогает избежать дублирования подписки при повторном bootstrap()
+    private var isLogoutObserverAttached = false
 
     // MARK: - Bootstrap (called from SplashView)
     func bootstrap() {
-        Task {
-            try? await Task.sleep(for: .seconds(0.8)) // небольшая задержка для анимации
+        Task { await bootstrapAsync() }
+    }
 
-            // 1) Токен
-            token = try? keychain.readToken()
+    /// Асинхронная версия bootstrap для вызова из .task { await appState.bootstrapAsync() }
+    func bootstrapAsync() async {
+        try? await Task.sleep(for: .milliseconds(800)) // небольшая задержка для анимации
 
-            // 2) Пользователь из UserDefaults (если был сохранён)
-            if let data = UserDefaults.standard.data(forKey: StorageKey.user) {
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
-                if let user = try? decoder.decode(User.self, from: data) {
-                    currentUser = user
-                }
+        // 1) Токен
+        do {
+            token = try keychain.readToken()
+        } catch {
+            print("⚠️ Keychain read failed:", error)
+            token = nil
+        }
+
+        // 2) Пользователь из UserDefaults (если был сохранён)
+        if let data = UserDefaults.standard.data(forKey: StorageKey.user) {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            if let user = try? decoder.decode(User.self, from: data) {
+                currentUser = user
             }
+        }
 
-            // 3) Решаем, какой экран показать
-            let hasSession = (self.token != nil) && (currentUser != nil)
-            route = hasSession ? .home : .auth
+        // 3) Решаем, какой экран показать
+        let hasSession = (self.token != nil) && (currentUser != nil)
+        route = hasSession ? .home : .auth
 
+        // 4) Подписываемся на logout‑уведомление (однократно)
+        if !isLogoutObserverAttached {
             NotificationCenter.default.publisher(for: .userShouldLogout)
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    self?.logout()
-                }
+                .sink { [weak self] _ in self?.logout() }
                 .store(in: &cancellables)
+            isLogoutObserverAttached = true
         }
     }
 
     // MARK: - Сохранение сессии после логина
     func saveSession(token: String, user: User) {
-        try? keychain.save(token: token)
+        do {
+            try keychain.save(token: token)
+        } catch {
+            print("⚠️ Keychain save failed:", error)
+        }
         self.token = token
         currentUser = user
 
@@ -99,7 +115,11 @@ final class AppState: ObservableObject {
 
     // MARK: - Logout
     func logout() {
-        try? keychain.deleteToken()
+        do {
+            try keychain.deleteToken()
+        } catch {
+            print("⚠️ Keychain delete failed:", error)
+        }
         self.token = nil
         UserDefaults.standard.removeObject(forKey: StorageKey.user)
         route = .auth

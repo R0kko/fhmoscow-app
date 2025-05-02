@@ -4,9 +4,13 @@ struct HomeView: View {
     // MARK: - Dependencies
     @EnvironmentObject private var appState: AppState
     @State private var isAppeared = false
-    @State private var showProfile = false
-    @State private var showPlayers = false
-    @State private var showTournaments = false
+
+    /// Навигация из HomeView
+    private enum Route: Hashable {
+        case profile
+        case players
+        case tournaments
+    }
 
     // MARK: - Brand
     private let brandText      = Color(hex: 0x122859)
@@ -37,36 +41,35 @@ struct HomeView: View {
     }
 
     // MARK: - Body
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    greetingHeader
-                    menuGrid
-                    placeholderArea
-                }
-                .padding(.horizontal)
-                .scaleEffect(isAppeared ? 1 : 0.95)
-                .opacity(isAppeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.4), value: isAppeared)
-                .onAppear { isAppeared = true }
-            }
-            .background(brandBackground.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(isPresented: $showProfile) {
-                ProfileView()
-                    .environmentObject(appState)
-            }
-            .navigationDestination(isPresented: $showPlayers) {
-                PlayersListView()
-                    .environmentObject(appState)
-            }
-            .navigationDestination(isPresented: $showTournaments) {
-                TournamentListView(appState: appState)
-                    .environmentObject(appState)
-            }
+var body: some View {
+    ScrollView {
+        VStack(alignment: .leading, spacing: 24) {
+            greetingHeader
+            menuGrid
+            placeholderArea
+        }
+        .padding(.horizontal)
+        .scaleEffect(isAppeared ? 1 : 0.95)
+        .opacity(isAppeared ? 1 : 0)
+        .animation(.easeOut(duration: 0.4), value: isAppeared)
+        .onAppear { isAppeared = true }
+    }
+    .background(brandBackground.ignoresSafeArea())
+    .navigationBarTitleDisplayMode(.inline)
+    .navigationDestination(for: Route.self) { route in
+        switch route {
+        case .profile:
+            ProfileView()
+                .environmentObject(appState)
+        case .players:
+            PlayersListView()
+                .environmentObject(appState)
+        case .tournaments:
+            TournamentListView(appState: appState)
+                .environmentObject(appState)
         }
     }
+}
 
     // MARK: - Components
     private var greetingHeader: some View {
@@ -80,7 +83,7 @@ struct HomeView: View {
                     .foregroundColor(brandText.opacity(0.6))
             }
             Spacer()
-            Button { showProfile = true } label: {
+            NavigationLink(value: Route.profile) {
                 Image(systemName: "person.circle.fill")
                     .font(.title2)
                     .foregroundColor(brandText)
@@ -93,16 +96,7 @@ struct HomeView: View {
     private var menuGrid: some View {
         LazyVGrid(columns: Array(repeating: .init(.flexible(), spacing: 16), count: 2), spacing: 16) {
             ForEach(menu) { item in
-                Button {
-                    switch item.destination {
-                    case .players:
-                        showPlayers = true
-                    case .tournaments:
-                        showTournaments = true
-                    case .none:
-                        break
-                    }
-                } label: {
+                NavigationLink(value: item.destination.map(routeFromMenu)) {
                     VStack(spacing: 12) {
                         Image(systemName: item.systemImage)
                             .font(.title)
@@ -116,6 +110,7 @@ struct HomeView: View {
                     .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(item.destination == nil)
             }
         }
     }
@@ -148,16 +143,25 @@ struct HomeView: View {
         default:       return "Доброй ночи"
         }
     }
+
+    private func routeFromMenu(_ dest: MenuItem.Destination) -> Route {
+        switch dest {
+        case .players: return .players
+        case .tournaments: return .tournaments
+        }
+    }
 }
 
 #Preview {
-    HomeView()
-        .environmentObject({
-            let roles = [Role(name: "Администратор", alias: "ADMIN")]
-            let dob = Calendar.current.date(from: DateComponents(year: 2000, month: 1, day: 1))!
-            let user = User(id: "1", firstName: "Алексей", lastName: "Иванов", middleName: nil, dateOfBirth: dob, email: "user@mail.ru", phone: "79104055190", roles: roles)
-            let state = AppState()
-            state.currentUser = user
-            return state
-        }())
+    NavigationStack {
+        HomeView()
+    }
+    .environmentObject({
+        let roles = [Role(name: "Администратор", alias: "ADMIN")]
+        let dob = Calendar.current.date(from: DateComponents(year: 2000, month: 1, day: 1))!
+        let user = User(id: "1", firstName: "Алексей", lastName: "Иванов", middleName: nil, dateOfBirth: dob, email: "user@mail.ru", phone: "79104055190", roles: roles)
+        let state = AppState()
+        state.currentUser = user
+        return state
+    }())
 }
