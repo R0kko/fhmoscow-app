@@ -157,7 +157,7 @@ struct TournamentDetailView: View {
         }
         .navigationTitle("Турнир")
         .navigationDestination(for: StageRoute.self) { route in
-            Text("Stage \(route.stage.name)") // TODO: StageDetailView
+            GroupsListView(stage: route.stage, appState: appState)
         }
         .task { await vm.load() }
     }
