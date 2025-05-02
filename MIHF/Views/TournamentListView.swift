@@ -19,7 +19,12 @@ final class TournamentListViewModel: ObservableObject {
     @Published var page = 1
     @Published var canLoadMore = true
 
-    let appState: AppState   // internal so View can read
+    @Published var seasonFilter: Int?
+    @Published var yearFilter: Int?
+
+    @Published var seasons: [SeasonDTO] = []
+
+    let appState: AppState
 
     init(appState: AppState) { self.appState = appState }
 
@@ -39,6 +44,20 @@ final class TournamentListViewModel: ObservableObject {
 
     func reload() async { page = 1; tournaments = []; canLoadMore = true; await loadNext() }
 
+    func applyFilters(season: Int?, year: Int?) async {
+        seasonFilter = season
+        yearFilter = year
+        await reload()
+    }
+
+    func loadSeasons() async {
+        guard seasons.isEmpty, let token = appState.token else { return }
+        do {
+            seasons = try await SeasonService.list(token: token)
+        } catch {
+        }
+    }
+
     private func loadFirst() async { if tournaments.isEmpty { await loadNext() } }
 
     private func loadNext() async {
@@ -47,6 +66,8 @@ final class TournamentListViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             let response = try await TournamentListService.list(
+                seasonId: seasonFilter,
+                yearOfBirth: yearFilter,
                 page: page,
                 limit: 20,
                 token: token
@@ -66,19 +87,36 @@ struct TournamentListView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var vm: TournamentListViewModel
 
+    @State private var showFilter = false
+    @State private var tempSeason: String = ""
+    @State private var tempYear: String = ""
+    @State private var showYearError = false
+
     /// Инициализатор, который получает актуальный `AppState` от родительского экрана
     init(appState: AppState) {
         _vm = StateObject(wrappedValue: TournamentListViewModel(appState: appState))
     }
 
+    private var grouped: [String: [TournamentRowDTO]] {
+        Dictionary(grouping: vm.tournaments, by: \ .type)
+    }
+
     var body: some View {
         NavigationStack {
             List {
-                ForEach(vm.tournaments) { tournament in
-                    TournamentRowView(tournament: tournament)
-                        .task {
-                            await vm.loadMoreIfNeeded(current: tournament)
+                ForEach(grouped.keys.sorted(), id: \ .self) { key in
+                    if let items = grouped[key] {
+                        Section(header: Text(key)) {
+                            ForEach(items) { tournament in
+                                NavigationLink(value: tournament.id) {
+                                    TournamentRowView(tournament: tournament)
+                                }
+                                .task {
+                                    await vm.loadMoreIfNeeded(current: tournament)
+                                }
+                            }
                         }
+                    }
                 }
                 if vm.isLoading {
                     HStack { Spacer(); ProgressView(); Spacer() }
@@ -86,10 +124,73 @@ struct TournamentListView: View {
             }
             .listStyle(.plain)
             .navigationTitle("Турниры")
+            .navigationDestination(for: Int.self) { id in
+                TournamentDetailView(tournamentId: id)
+            }
             .refreshable { await vm.reload() }
             .task { await vm.loadMoreIfNeeded(current: nil) }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        Task { await vm.loadSeasons() }
+                        tempSeason = vm.seasonFilter.map(String.init) ?? ""
+                        tempYear = vm.yearFilter.map(String.init) ?? ""
+                        showFilter = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                    }
+                }
+            }
+            .sheet(isPresented: $showFilter) {
+                NavigationStack {
+                    Form {
+                        Section("Сезон") {
+                            Picker("Сезон", selection: $tempSeason) {
+                                Text("Все").tag("")
+                                ForEach(vm.seasons) { season in
+                                    Text(season.name).tag(String(season.id))
+                                }
+                            }
+                        }
+                        Section("Год рождения") {
+                            TextField("Например 2015", text: $tempYear)
+                                .keyboardType(.numberPad)
+                        }
+                    }
+                    .navigationTitle("Фильтр")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("Отмена") { showFilter = false } }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Применить") {
+                                let trimmed = tempYear.trimmingCharacters(in: .whitespaces)
+                                if !trimmed.isEmpty {
+                                    if let y = Int(trimmed), (2000...2016).contains(y) {
+                                        showFilter = false
+                                        Task { await vm.applyFilters(season: Int(tempSeason), year: y) }
+                                    } else {
+                                        showYearError = true
+                                    }
+                                } else {
+                                    // год не задан – разрешаем
+                                    showFilter = false
+                                    Task { await vm.applyFilters(season: Int(tempSeason), year: nil) }
+                                }
+                            }
+                        }
+                    }
+                }
+                .alert("Неверный год", isPresented: $showYearError) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text("Введите год от 2000 до 2016.")
+                }
+            }
         }
     }
+}
+
+private extension TournamentRowDTO {
+    var birthYearString: String { String(year_of_birth) }
 }
 
 // MARK: - Row View
@@ -112,7 +213,7 @@ struct TournamentRowView: View {
                 Text(tournament.short_name)
                     .font(.headline)
                     .lineLimit(1)
-                Text("Год рождения: \(tournament.year_of_birth)")
+                Text("Год рождения: \(String(tournament.year_of_birth))")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 Text("Сезон \(tournament.season)")
