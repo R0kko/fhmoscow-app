@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// Навигационный маршрут к детальной информации команды
+private struct TeamRoute: Hashable {
+    let id: Int
+    let name: String
+}
+
 // Helper: remove HTML tags from server‑side description
 private extension String {
     var strippedHTML: String {
@@ -96,30 +102,31 @@ struct ClubDetailView: View {
                                 .font(.headline)
 
                             ForEach(detail.teams) { team in
-                                HStack(spacing: 12) {
-                                    AsyncImage(url: URL(string: detail.logoUrl ?? "")) { phase in
-                                        switch phase {
-                                        case .success(let img): img.resizable()
-                                        default:
-                                            Circle().fill(Color(.systemGray4))
+                                NavigationLink(value: TeamRoute(id: team.id, name: team.shortName)) {
+                                    HStack(spacing: 12) {
+                                        AsyncImage(url: URL(string: detail.logoUrl ?? "")) { phase in
+                                            switch phase {
+                                            case .success(let img): img.resizable()
+                                            default: Circle().fill(Color(.systemGray4))
+                                            }
                                         }
-                                    }
-                                    .frame(width: 40, height: 40)
-                                    .clipShape(Circle())
+                                        .frame(width: 40, height: 40)
+                                        .clipShape(Circle())
 
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(team.shortName)
-                                            .font(.body)
-                                            .lineLimit(1)
-                                        if let year = team.year {
-                                            Text(String(year))
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(team.shortName)
+                                                .font(.body)
+                                                .lineLimit(1)
+                                            if let year = team.year {
+                                                Text(String(year))
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
                                         }
+                                        Spacer()
                                     }
-                                    Spacer()
+                                    .padding(.vertical, 4)
                                 }
-                                .padding(.vertical, 4)
                             }
                         }
                     }
@@ -132,6 +139,10 @@ struct ClubDetailView: View {
             }
         }
         .navigationTitle(clubName)
+        .navigationDestination(for: TeamRoute.self) { route in
+            TeamDetailView(teamId: route.id, teamName: route.name, appState: appState)
+                .environmentObject(appState)
+        }
         .task { await vm.load() }
     }
 }
