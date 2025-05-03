@@ -10,6 +10,7 @@ struct HomeView: View {
         case profile
         case players
         case tournaments
+        case clubs
     }
 
     // MARK: - Brand
@@ -18,19 +19,20 @@ struct HomeView: View {
 
     // MARK: - Menu stub
     private struct MenuItem: Identifiable {
-        enum Destination { case players, tournaments }
+        enum Destination { case players, tournaments, clubs }
         let id = UUID()
         let title: String
         let systemImage: String
         let destination: Destination?
     }
     private let menu: [MenuItem] = [
-        .init(title: "Игроки",    systemImage: "person.3", destination: .players),
-        .init(title: "Турниры",   systemImage: "trophy",   destination: .tournaments),
-        .init(title: "Новости",   systemImage: "newspaper", destination: nil),
-        .init(title: "Календарь", systemImage: "calendar",  destination: nil),
+        .init(title: "Игроки",    systemImage: "person.3",     destination: .players),
+        .init(title: "Турниры",   systemImage: "trophy",       destination: .tournaments),
+        .init(title: "Клубы",     systemImage: "building.2",   destination: .clubs),
+        .init(title: "Новости",   systemImage: "newspaper",    destination: nil),
+        .init(title: "Календарь", systemImage: "calendar",     destination: nil),
         .init(title: "Задачи",    systemImage: "checkmark.circle", destination: nil),
-        .init(title: "Документы", systemImage: "doc.text", destination: nil)
+        .init(title: "Документы", systemImage: "doc.text",     destination: nil)
     ]
 
     private var ruDateString: String {
@@ -42,31 +44,34 @@ struct HomeView: View {
 
     // MARK: - Body
 var body: some View {
-    ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
-            greetingHeader
-            menuGrid
-            placeholderArea
+    NavigationStack {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                greetingHeader
+                menuGrid
+                placeholderArea
+            }
+            .padding(.horizontal)
+            .scaleEffect(isAppeared ? 1 : 0.95)
+            .opacity(isAppeared ? 1 : 0)
+            .animation(.easeOut(duration: 0.4), value: isAppeared)
+            .onAppear { isAppeared = true }
         }
-        .padding(.horizontal)
-        .scaleEffect(isAppeared ? 1 : 0.95)
-        .opacity(isAppeared ? 1 : 0)
-        .animation(.easeOut(duration: 0.4), value: isAppeared)
-        .onAppear { isAppeared = true }
-    }
-    .background(brandBackground.ignoresSafeArea())
-    .navigationBarTitleDisplayMode(.inline)
-    .navigationDestination(for: Route.self) { route in
-        switch route {
-        case .profile:
-            ProfileView()
-                .environmentObject(appState)
-        case .players:
-            PlayersListView()
-                .environmentObject(appState)
-        case .tournaments:
-            TournamentListView(appState: appState)
-                .environmentObject(appState)
+        .background(brandBackground.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        // destination inside NavigationStack
+        .navigationDestination(for: Route.self) { route in
+            switch route {
+            case .profile:
+                ProfileView().environmentObject(appState)
+            case .players:
+                PlayersListView().environmentObject(appState)
+            case .tournaments:
+                TournamentListView(appState: appState).environmentObject(appState)
+            case .clubs:
+                ClubListView(appState: appState)
+                    .environmentObject(appState)
+            }
         }
     }
 }
@@ -96,23 +101,32 @@ var body: some View {
     private var menuGrid: some View {
         LazyVGrid(columns: Array(repeating: .init(.flexible(), spacing: 16), count: 2), spacing: 16) {
             ForEach(menu) { item in
-                NavigationLink(value: item.destination.map(routeFromMenu)) {
-                    VStack(spacing: 12) {
-                        Image(systemName: item.systemImage)
-                            .font(.title)
-                            .foregroundColor(brandText)
-                        Text(item.title)
-                            .font(.body.weight(.medium))
-                            .foregroundColor(brandText)
+                if let dest = item.destination {
+                    NavigationLink(value: routeFromMenu(dest)) {
+                        menuTile(for: item)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 100)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    menuTile(for: item)
+                        .opacity(0.4)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(item.destination == nil)
             }
         }
+    }
+
+    @ViewBuilder
+    private func menuTile(for item: MenuItem) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: item.systemImage)
+                .font(.title)
+                .foregroundColor(brandText)
+            Text(item.title)
+                .font(.body.weight(.medium))
+                .foregroundColor(brandText)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
     }
 
     /// Заглушка под будущие модули / виджеты
@@ -146,8 +160,9 @@ var body: some View {
 
     private func routeFromMenu(_ dest: MenuItem.Destination) -> Route {
         switch dest {
-        case .players: return .players
+        case .players:     return .players
         case .tournaments: return .tournaments
+        case .clubs:       return .clubs
         }
     }
 }

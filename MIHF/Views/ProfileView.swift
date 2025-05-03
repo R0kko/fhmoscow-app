@@ -12,54 +12,52 @@ struct ProfileView: View {
     private var user: User? { appState.currentUser }
     
     var body: some View {
-        NavigationStack {
-            List {
-                if let user = user {
+        List {
+            if let user = user {
 
-                    Section(header: Text("Основное")) {
-                        LabeledContent("Имя", value: user.firstName)
-                        LabeledContent("Фамилия", value: user.lastName)
-                        if let middle = user.middleName { LabeledContent("Отчество", value: middle) }
-                        if let dob = user.dateOfBirth {
-                            LabeledContent("Дата рождения", value: formatDate(dob))
-                        }
+                Section(header: Text("Основное")) {
+                    LabeledContent("Имя", value: user.firstName)
+                    LabeledContent("Фамилия", value: user.lastName)
+                    if let middle = user.middleName { LabeledContent("Отчество", value: middle) }
+                    if let dob = user.dateOfBirth {
+                        LabeledContent("Дата рождения", value: formatDate(dob))
                     }
+                }
 
-                    Section(header: Text("Контакты")) {
-                        LabeledContent("Телефон", value: formattedPhone(user.phone))
-                        if let email = user.email {
-                            LabeledContent("E‑mail", value: email)
-                        }
+                Section(header: Text("Контакты")) {
+                    LabeledContent("Телефон", value: formattedPhone(user.phone))
+                    if let email = user.email {
+                        LabeledContent("E‑mail", value: email)
                     }
+                }
 
-                    Section(header: Text("Роли")) {
-                        ForEach(user.roles) { role in
-                            Text("\(role.name)")
-                        }
+                Section(header: Text("Роли")) {
+                    ForEach(user.roles) { role in
+                        Text("\(role.name)")
                     }
+                }
 
-                    Section {
-                        Button { showEmailSheet = true } label: { Text("Изменить e‑mail") }
-                        Button { showPasswordSheet = true } label: { Text("Сбросить пароль") }
-                    }
+                Section {
+                    Button { showEmailSheet = true } label: { Text("Изменить e‑mail") }
+                    Button { showPasswordSheet = true } label: { Text("Сбросить пароль") }
+                }
 
-                    Section {
-                        Button("Выйти из аккаунта", role: .destructive) {
-                            showLogoutConfirm = true
-                        }
+                Section {
+                    Button("Выйти из аккаунта", role: .destructive) {
+                        showLogoutConfirm = true
                     }
                 }
             }
-            .navigationTitle("Профиль")
-            .alert("Вы действительно хотите выйти?", isPresented: $showLogoutConfirm) {
-                Button("Выйти", role: .destructive) {
-                    appState.logout()
-                }
-                Button("Отмена", role: .cancel) { }
-            }
-            .sheet(isPresented: $showEmailSheet) { EditEmailView().environmentObject(appState) }
-            .sheet(isPresented: $showPasswordSheet) { ChangePasswordView().environmentObject(appState) }
         }
+        .navigationTitle("Профиль")
+        .alert("Вы действительно хотите выйти?", isPresented: $showLogoutConfirm) {
+            Button("Выйти", role: .destructive) {
+                appState.logout()
+            }
+            Button("Отмена", role: .cancel) { }
+        }
+        .sheet(isPresented: $showEmailSheet) { EditEmailView().environmentObject(appState) }
+        .sheet(isPresented: $showPasswordSheet) { ChangePasswordView().environmentObject(appState) }
     }
 
     // MARK: - Helpers
