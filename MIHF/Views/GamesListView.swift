@@ -43,7 +43,8 @@ struct GamesListView: View {
         .listStyle(.plain)
         .navigationTitle("Матчи")
         .navigationDestination(for: GameRoute.self) { route in
-            Text("Game #\(route.id)") // TODO: GameDetailView
+            GameDetailView(gameId: route.id, appState: appState)
+                .environmentObject(appState)
         }
         .refreshable { await vm.reload() }
         .task { await vm.reload() }
