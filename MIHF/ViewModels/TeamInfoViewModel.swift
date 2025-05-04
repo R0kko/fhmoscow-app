@@ -9,6 +9,7 @@ final class TeamListViewModel: ObservableObject {
     @Published var page = 1
     @Published var query: String = ""
     @Published var yearFilter: Int?
+    
 
     private unowned let appState: AppState
     private let pageLimit = 20

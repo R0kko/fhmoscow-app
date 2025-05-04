@@ -11,6 +11,7 @@ struct HomeView: View {
         case players
         case tournaments
         case clubs
+        case games
     }
 
     // MARK: - Brand
@@ -19,7 +20,7 @@ struct HomeView: View {
 
     // MARK: - Menu stub
     private struct MenuItem: Identifiable {
-        enum Destination { case players, tournaments, clubs }
+        enum Destination { case players, tournaments, clubs, games }
         let id = UUID()
         let title: String
         let systemImage: String
@@ -29,6 +30,7 @@ struct HomeView: View {
         .init(title: "Игроки",    systemImage: "person.3",     destination: .players),
         .init(title: "Турниры",   systemImage: "trophy",       destination: .tournaments),
         .init(title: "Клубы",     systemImage: "building.2",   destination: .clubs),
+        .init(title: "Игры",      systemImage: "sportscourt",  destination: .games),
         .init(title: "Новости",   systemImage: "newspaper",    destination: nil),
         .init(title: "Календарь", systemImage: "calendar",     destination: nil),
         .init(title: "Задачи",    systemImage: "checkmark.circle", destination: nil),
@@ -70,6 +72,9 @@ var body: some View {
                 TournamentListView(appState: appState).environmentObject(appState)
             case .clubs:
                 ClubListView(appState: appState)
+                    .environmentObject(appState)
+            case .games:
+                GamesListView(appState: appState)
                     .environmentObject(appState)
             }
         }
@@ -163,6 +168,7 @@ var body: some View {
         case .players:     return .players
         case .tournaments: return .tournaments
         case .clubs:       return .clubs
+        case .games:       return .games
         }
     }
 }
