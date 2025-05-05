@@ -19,7 +19,6 @@ final class TournamentDetailService: TournamentDetailServiceProtocol {
         #endif
 
         let decoder = JSONDecoder()
-        // Поддерживаем ISO‑8601 как с миллисекундами, так и без них
         let isoWithFraction = ISO8601DateFormatter()
         isoWithFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 

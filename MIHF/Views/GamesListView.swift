@@ -119,7 +119,6 @@ struct GamesListView: View {
         }
     }
 
-    // MARK: – Load list of teams for picker
     @MainActor
     private func loadTeams() async {
         guard teams.isEmpty, let token = appState.token else { return }
@@ -132,8 +131,6 @@ struct GamesListView: View {
     }
 }
 
-// MARK: – Subviews
-// MARK: – GameCard (vertical score‑box layout)
 private struct GameCard: View {
 
     let game: GameRowDTO
@@ -152,8 +149,6 @@ private struct GameCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-
-            // Top meta (date + tournament/group)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(Self.displayFormatter.string(
                         from: Self.isoFormatter.date(from: game.date_start) ?? Date()
@@ -187,7 +182,6 @@ private struct GameCard: View {
                 }
             }
 
-            // Stadium + status
             HStack(spacing: 6) {
                 Image(systemName: "mappin.and.ellipse")
                 Text(game.stadium?.name ?? "Стадион неизвестен")
@@ -205,7 +199,7 @@ private struct GameCard: View {
 }
 
 // MARK: – Helper subviews
-private struct ScoreBox: View {
+struct ScoreBox: View {
     let team1: Int?
     let team2: Int?
 
@@ -222,7 +216,7 @@ private struct ScoreBox: View {
     }
 }
 
-private struct TeamRow: View {
+struct TeamRow: View {
     let name: String
     let logo: String?
 
@@ -247,7 +241,7 @@ private struct TeamRow: View {
     }
 }
 
-private struct StatusPill: View {
+struct StatusPill: View {
     let status: Int?
 
     var label: (text: String, color: Color) {

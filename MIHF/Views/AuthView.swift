@@ -173,7 +173,6 @@ struct AuthView: View {
 
                 let roles = dto.roles?.map { Role(name: $0.name, alias: $0.alias) } ?? []
 
-                // Конвертируем ISO‑8601 строку даты рождения → Date?
                 let dob: Date? = {
                     guard let iso = dto.date_of_birth else { return nil }
                     return ISO8601DateFormatter().date(from: iso)
@@ -200,7 +199,6 @@ struct AuthView: View {
         }
     }
 
-    /// Раскладываем APIError в пользовательское сообщение
     private func handle(_ error: Error) {
         if let apiErr = error as? APIError {
             switch apiErr {

@@ -1,7 +1,5 @@
 import Foundation
 
-// MARK: - DTOs --------------------------------------------------------------
-
 /// Короткая карточка команды (для списков)
 struct TeamRowDTO: Identifiable, Decodable {
     let id: Int

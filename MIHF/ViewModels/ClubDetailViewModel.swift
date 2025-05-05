@@ -1,7 +1,5 @@
-
 import SwiftUI
 
-/// View‑model детального экрана клуба
 @MainActor
 final class ClubDetailViewModel: ObservableObject {
     // MARK: - Published UI state

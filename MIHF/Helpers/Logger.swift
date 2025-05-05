@@ -24,7 +24,6 @@ final class Logger {
     }
 }
 
-/// Fallback for iOS < 14
 final class LegacyLogger {
     static let shared = LegacyLogger()
     func info(_ message: String)  { print("INFO:  \(message)") }

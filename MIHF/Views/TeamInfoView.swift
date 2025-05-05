@@ -21,11 +21,9 @@ struct TeamListView: View {
     @State private var query: String = ""
     @State private var yearFilter: String = ""
 
-    // UI
     @State private var showFilter = false
     @State private var showYearError = false
 
-    // init
     init(appState: AppState) {
         _vm = StateObject(wrappedValue: TeamListViewModel(appState: appState))
     }
@@ -101,7 +99,6 @@ struct TeamListView: View {
         .task { await vm.reload() }
     }
 
-    // Row
     private struct TeamRow: View {
         let team: TeamRowDTO
         var body: some View {
@@ -123,14 +120,12 @@ struct TeamListView: View {
     }
 }
 
-// placeholder
 private extension TeamRowDTO {
     static var placeholder: TeamRowDTO {
         .init(id: 0, shortName: "Команда", logoUrl: nil)
     }
 }
 
-// Helper to format ISO‑8601 date (supports fractional seconds) → "1 января 2008"
 private func formattedBirth(_ iso: String?) -> String? {
     guard let iso else { return nil }
 
@@ -150,7 +145,6 @@ private func formattedBirth(_ iso: String?) -> String? {
     return df.string(from: date)
 }
 
-// MARK: - TEAM DETAIL --------------------------------------------------------
 struct TeamDetailView: View {
 
     let teamId: Int
@@ -250,15 +244,7 @@ struct TeamDetailView: View {
                     .padding()
                 }
                 .navigationDestination(for: PlayerRoute.self) { route in
-                    // Placeholder detail
-                    VStack {
-                        Text("Player #\(route.id)")
-                            .font(.title2)
-                        Text(route.name)
-                        Spacer()
-                    }
-                    .navigationTitle("Игрок")
-                    .navigationBarTitleDisplayMode(.inline)
+                    PlayerDetailView(playerID: route.id, appState: appState)
                 }
             } else if vm.isLoading {
                 VStack { Spacer(); ProgressView(); Spacer() }
@@ -275,13 +261,12 @@ struct TeamDetailView: View {
         let fullName: String
         let subtitle: String?      // position / category / birth
         let photoUrl: String?
-        let number: Int?           // jersey number (optional)
+        let number: Int?
         let showChevron: Bool      // arrow for navigable rows
 
         var body: some View {
             HStack(spacing: 12) {
 
-                // Avatar
                 AsyncImage(url: URL(string: photoUrl ?? "")) { phase in
                     switch phase {
                     case .success(let img): img.resizable()
@@ -294,7 +279,6 @@ struct TeamDetailView: View {
                 .frame(width: 40, height: 40)
                 .clipShape(Circle())
 
-                // Number capsule (if present)
                 if let number {
                     Text(String(number))
                         .font(.caption.bold())
@@ -303,11 +287,10 @@ struct TeamDetailView: View {
                         .clipShape(Circle())
                 }
 
-                // Name & subtitle
                 VStack(alignment: .leading, spacing: 2) {
                     Text(fullName)
                         .font(.body)
-                        .foregroundColor(.primary)   // avoid blue link colour
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)

@@ -1,7 +1,6 @@
 import Foundation
 
 
-/// Короткая карточка клуба (для списков)
 struct ClubRowDTO: Identifiable, Decodable {
     let id: Int
     let shortName: String
@@ -22,7 +21,6 @@ struct ClubsListResponse: Decodable {
     let limit: Int
 }
 
-/// Детальная карточка клуба
 struct ClubDetailDTO: Decodable {
     struct Team: Identifiable, Decodable {
         let id: Int

@@ -56,7 +56,6 @@ struct GamesListResponse: Decodable {
 }
 
 // MARK: - Service
-/// Аналогично `TournamentListService` — загрузка списка матчей с фильтрами.
 enum GamesListService {
 
     /// Получить список игр.

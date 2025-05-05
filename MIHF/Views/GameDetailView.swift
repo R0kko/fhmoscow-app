@@ -1,3 +1,4 @@
+
 import SwiftUI
 import WebKit
 
@@ -27,6 +28,9 @@ struct GameDetailView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var vm: GameDetailViewModel
     @State private var selectedTab: Tab = .events
+    /// 0 – team1, 1 – team2
+    @State private var selectedLineup = 0
+    @Environment(\.openURL) private var openURL
 
     private enum Tab: Hashable { case events, broadcast, lineups }
 
@@ -66,13 +70,12 @@ struct GameDetailView: View {
         .navigationTitle("Матч")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.load() }
-        // Переходы
         .navigationDestination(for: TeamRoute.self) { route in
             TeamDetailView(teamId: route.id, teamName: "Команда", appState: appState)
                 .environmentObject(appState)
         }
         .navigationDestination(for: PlayerRoute.self) { route in
-            Text("Игрок #\(route.id)") // TODO: PlayerDetailView
+            PlayerDetailView(playerID: route.id, appState: appState)
         }
     }
 }
@@ -103,6 +106,7 @@ private extension GameDetailView {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal)
+        .padding(.bottom, 16)   // дополнительный отступ после названия арены
     }
 
     func dateString(_ iso: String) -> String {
@@ -141,12 +145,11 @@ private extension GameDetailView {
     func scoreBlock(_ s: GameScoreDTO, status: Int) -> some View {
         VStack(spacing: 2) {
             // main score
-            Text("\(s.team1) : \(s.team2)")
+            Text("\(s.team1 ?? 0) : \(s.team2 ?? 0)")
                 .font(.system(size: 40, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.5)
 
-            // shoot‑out (optional)
             if let so = s.shootout,
                let t1 = so.team1,
                let t2 = so.team2 {
@@ -158,7 +161,6 @@ private extension GameDetailView {
             statusIndicator(status)
         }
         .frame(minWidth: 110)
-        // Increase tap size around the score so the header feels balanced.
         .contentShape(Rectangle())
     }
 
@@ -188,60 +190,86 @@ private extension GameDetailView {
 // MARK: - Tabs
 private extension GameDetailView {
     func eventsTab(_ g: GameDetailDTO) -> some View {
-        List {
-            ForEach(vm.filteredEvents) { ev in
-                eventRow(ev)
+        Group {
+            if vm.filteredEvents.isEmpty {
+                ContentUnavailableView("События ещё не загружены",
+                                       systemImage: "list.bullet.rectangle")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(vm.filteredEvents) { ev in
+                            eventRow(ev)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .scrollIndicators(.hidden)
+                }
             }
         }
-        .listStyle(.plain)
-        .animation(.default, value: vm.filteredEvents)
+        .background(Color(uiColor: .systemGroupedBackground))
     }
 
-    @ViewBuilder
     func eventRow(_ ev: GameEventDTO) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .center, spacing: 12) {
             Text(ev.clockText)
-                .font(.caption.monospacedDigit())
-                .frame(width: 46, alignment: .trailing)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 60, alignment: .trailing)
 
             Image(systemName: ev.iconName)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(ev.typeColor)
-                .frame(width: 16)
+                .frame(width: 20)
 
-            VStack(alignment: .leading, spacing: 2) {
-                // команда
+            VStack(alignment: .leading, spacing: 4) {
+                Text(ev.eventTitle)
+                    .font(.subheadline.weight(.semibold))
+
                 NavigationLink(value: TeamRoute(id: ev.team.id)) {
-                    Text(ev.team.name).font(.caption.weight(.semibold))
+                    Text(ev.team.name)
+                        .font(.footnote)
+                        .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
+                .hideChevron()
 
                 switch ev.typeId {
                 case 2: goalView(ev)
                 case 4: penaltyView(ev)
-                default: Text(ev.type)
+                default: EmptyView()
                 }
             }
+
+            Spacer(minLength: 0)
         }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        )
     }
 
     @ViewBuilder
     func goalView(_ ev: GameEventDTO) -> some View {
         if let scorer = ev.goalAuthor {
             HStack(spacing: 4) {
-                playerLink(scorer)
+                playerLink(scorer).hideChevron()
                 Text("— гол")
             }
         }
         if let a1 = ev.assist1 {
             HStack(spacing: 4) {
                 Text("пас:")
-                playerLink(a1)
+                playerLink(a1).hideChevron()
             }
         }
         if let a2 = ev.assist2 {
             HStack(spacing: 4) {
                 Text("пас:")
-                playerLink(a2)
+                playerLink(a2).hideChevron()
             }
         }
     }
@@ -249,12 +277,17 @@ private extension GameDetailView {
     @ViewBuilder
     func penaltyView(_ ev: GameEventDTO) -> some View {
         HStack(spacing: 4) {
-            if let p = ev.penaltyPlayer {
-                playerLink(p)
+            Image(systemName: "hand.raised.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            if let player = ev.penaltyPlayer {
+                playerLink(player).hideChevron()
             }
-            Text("— \(ev.violation?.fullName ?? ev.violation?.name ?? "")")
-            if let m = ev.penalty?.minutes {
-                Text("(\(m) мин)")
+
+            if let minutes = ev.penalty?.minutes {
+                Text("(\(minutes) мин)")
+                    .font(.footnote)
             }
         }
     }
@@ -262,28 +295,91 @@ private extension GameDetailView {
     @ViewBuilder
     func playerLink(_ p: GameEventDTO.ShortPerson) -> some View {
         NavigationLink(value: PlayerRoute(id: p.id)) {
-            Text(p.name).underline().foregroundStyle(.blue)
+            Text(p.name)
+                .foregroundStyle(.primary)
         }
         .buttonStyle(.plain)
+        .listRowSeparator(.hidden)
     }
 
-    // — BROADCAST —
     @ViewBuilder
     func broadcastTab(_ g: GameDetailDTO) -> some View {
         if let urlStr = g.broadcast, let url = URL(string: urlStr) {
-            WebVideoView(url: url)
-                .aspectRatio(CGSize(width: 16, height: 9), contentMode: .fit)
-                .frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Видео‑плеер
+                    WebVideoView(url: url)
+                        .aspectRatio(CGSize(width: 16, height: 9), contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .shadow(radius: 4)
+
+                    // Кнопка «Открыть в Safari»
+                    Button {
+                        openURL(url)
+                    } label: {
+                        Label("Открыть в Safari", systemImage: "safari")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
                 .padding(.horizontal)
+                .padding(.top, 24)
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .scrollIndicators(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground))
         } else {
             ContentUnavailableView("Трансляция недоступна", systemImage: "tv.slash")
         }
     }
 
-    // — LINE-UPS —
     @ViewBuilder
     func lineupsTab() -> some View {
-        ContentUnavailableView("Составы пока недоступны", systemImage: "person.3")
+        let players1 = vm.lineupTeam1?.players ?? []
+        let players2 = vm.lineupTeam2?.players ?? []
+        if players1.isEmpty && players2.isEmpty {
+            ContentUnavailableView("Составы пока недоступны",
+                                   systemImage: "person.3")
+        } else {
+            VStack {
+                Picker("Команда", selection: $selectedLineup) {
+                    if let t1 = vm.detail?.team1 {
+                        Text(t1.name).tag(0)
+                    }
+                    if let t2 = vm.detail?.team2 {
+                        Text(t2.name).tag(1)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding([.top, .horizontal])
+
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        let currentPlayers = selectedLineup == 0 ? players1 : players2
+                        ForEach(currentPlayers) { pl in
+                            NavigationLink(value: PlayerRoute(id: pl.id)) {
+                                LineupRow(player: pl)
+                                    .padding(.horizontal)
+                            }
+                            .buttonStyle(.plain)
+                            .hideChevron()
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+        }
+    }
+}
+
+extension View {
+    func hideChevron() -> some View {
+        self
+            .overlay(
+                Image(systemName: "chevron.right")
+                    .opacity(0)
+            )
     }
 }
 
@@ -303,23 +399,70 @@ private extension GameEventDTO {
         default: return .gray
         }
     }
+
+    var eventTitle: String {
+        switch typeId {
+        case 2:  return "Гол"
+        case 4:  return violation?.fullName ?? "Штраф"
+        default: return type
+        }
+    }
 }
 
 extension GameEventDTO {
-    /// Human‑readable time (mm:ss) used by the list.
     var clockText: String {
         String(format: "%02d:%02d", minute ?? 0, second ?? 0)
     }
 }
 
-// MARK: - Equatable conformance (needed for .animation value)
-extension GameEventDTO: Equatable {
-    static func == (lhs: GameEventDTO, rhs: GameEventDTO) -> Bool {
-        lhs.id == rhs.id
+
+/// Compact row for a player in the line‑up
+private struct LineupRow: View {
+    let player: GameLineupDTO.Player
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // photo / placeholder
+            AsyncImage(url: URL(string: player.photoURL ?? "")) { phase in
+                switch phase {
+                case .success(let img): img.resizable()
+                default:
+                    Image(systemName: "person.crop.circle")
+                        .resizable()
+                        .foregroundColor(.gray.opacity(0.4))
+                }
+            }
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
+
+            // jersey number, if any
+            if let num = player.number {
+                Text(String(num))
+                    .font(.caption.bold())
+                    .frame(width: 26, height: 26)
+                    .background(Color.accentColor.opacity(0.15))
+                    .clipShape(Circle())
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(player.fullName)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                if let pos = player.position {
+                    Text(pos)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .padding(.vertical, 4)
     }
 }
 
-// MARK: - Предпросмотр
 #Preview {
     NavigationStack {
         GameDetailView(gameId: 3222, appState: AppState())

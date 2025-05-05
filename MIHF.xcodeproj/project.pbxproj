@@ -35,16 +35,6 @@
 			path = MIHF;
 			sourceTree = "<group>";
 		};
-		7D6C81172DBAC26600BD7046 /* MIHFTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MIHFTests;
-			sourceTree = "<group>";
-		};
-		7D6C81212DBAC26600BD7046 /* MIHFUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MIHFUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				7D6C81092DBAC26600BD7046 /* MIHF */,
-				7D6C81172DBAC26600BD7046 /* MIHFTests */,
-				7D6C81212DBAC26600BD7046 /* MIHFUITests */,
 				7D6C81082DBAC26600BD7046 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -130,9 +118,6 @@
 			dependencies = (
 				7D6C81162DBAC26600BD7046 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				7D6C81172DBAC26600BD7046 /* MIHFTests */,
-			);
 			name = MIHFTests;
 			packageProductDependencies = (
 			);
@@ -152,9 +137,6 @@
 			);
 			dependencies = (
 				7D6C81202DBAC26600BD7046 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				7D6C81212DBAC26600BD7046 /* MIHFUITests */,
 			);
 			name = MIHFUITests;
 			packageProductDependencies = (

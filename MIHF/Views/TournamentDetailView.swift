@@ -45,7 +45,7 @@ private struct StageRoute: Hashable {
 // MARK: - View
 struct TournamentDetailView: View {
     let tournamentId: Int
-    private let appState: AppState        // passed from parent
+    private let appState: AppState
     @StateObject private var vm: TournamentDetailViewModel
 
     init(tournamentId: Int,
@@ -185,7 +185,7 @@ private struct FieldRow: View {
                     .font(.body)
             }
         }
-        .padding(.vertical, 2)                           // tighter row
+        .padding(.vertical, 2)                    
     }
 }
 private extension TournamentDetailView {

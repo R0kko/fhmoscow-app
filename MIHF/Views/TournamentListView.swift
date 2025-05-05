@@ -30,7 +30,6 @@ final class TournamentListViewModel: ObservableObject {
 
     func loadMoreIfNeeded(current item: TournamentRowDTO?) async {
         guard let item = item else { await loadFirst(); return }
-        // Вычисляем индекс порога безопасно (если элементов < 3)
         let thresholdIndex = tournaments.index(
             tournaments.endIndex,
             offsetBy: -3,
@@ -83,7 +82,6 @@ final class TournamentListViewModel: ObservableObject {
 }
 
 // MARK: - View
-/// Уникальный тип ссылки, чтобы не конфликтовать с другими `.navigationDestination(for: Int.self)`
 private struct TournamentRoute: Hashable {
     let id: Int
 }
@@ -96,12 +94,10 @@ struct TournamentListView: View {
     @State private var tempYear: String = ""
     @State private var showYearError = false
     
-    /// Инициализатор, который получает актуальный `AppState` от родительского экрана
     init(appState: AppState) {
         _vm = StateObject(wrappedValue: TournamentListViewModel(appState: appState))
     }
     
-    /// Трансформируем в массив, чтобы порядок секций был стабильным и избежать пустых секций
     private var grouped: [(key: String, items: [TournamentRowDTO])] {
         Dictionary(grouping: vm.tournaments, by: \.type)
             .map { ($0.key, $0.value) }
@@ -199,7 +195,6 @@ struct TournamentListView: View {
         }
         
     }
-    
     
     // MARK: - Row View
     struct TournamentRowView: View {

@@ -48,7 +48,6 @@ struct EditEmailView: View {
             }
             let dto = try await API.updateEmail(email, token: token)
             let roles = dto.roles?.map { Role(name: $0.name, alias: $0.alias) } ?? []
-            // Конвертируем ISO‑строку даты рождения → Date?
             let dob: Date? = {
                 guard let iso = dto.date_of_birth else { return nil }
                 return ISO8601DateFormatter().date(from: iso)

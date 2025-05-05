@@ -59,7 +59,6 @@ struct API {
         return d
     }()
 
-    /// Generic GET with optional token & query items
     static func get<T: Decodable>(_ path: String,
                                   token: String? = nil,
                                   query: [URLQueryItem]? = nil,

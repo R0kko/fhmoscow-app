@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// View‑model для списка групп конкретного этапа
 @MainActor
 final class GroupViewModel: ObservableObject {
 
@@ -33,7 +32,6 @@ final class GroupViewModel: ObservableObject {
         await loadNext()
     }
 
-    /// Подгрузка следующей страницы, если нужна
     func loadMoreIfNeeded(current item: GroupRowDTO?) async {
         guard let item else { await loadNext(); return }
         let threshold = groups.index(

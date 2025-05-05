@@ -1,13 +1,11 @@
 import SwiftUI
 
-/// Экран «Список групп» для выбранного этапа
 struct GroupsListView: View {
-    let stage: StageDTO            // пришёл из детального турнира
+    let stage: StageDTO
     private let appState: AppState
 
     @StateObject private var vm: GroupViewModel
 
-    /// Инициализатор: передаём StageDTO и AppState
     init(stage: StageDTO, appState: AppState) {
         self.stage = stage
         self.appState = appState
@@ -15,7 +13,6 @@ struct GroupsListView: View {
                                                        appState: appState))
     }
 
-    // уникальный маршрут для детального экрана группы
     private struct GroupRoute: Hashable {
         let id: Int
         let name: String

@@ -26,7 +26,6 @@ final class TournamentDetailViewModel: ObservableObject {
     }
 
     // MARK: - API
-    /// Явная функция перезагрузки; можно вызывать из `.task` или по pull-to-refresh
     func load() async {
         guard !isLoading else { return }
         isLoading = true
@@ -49,7 +48,6 @@ final class TournamentDetailViewModel: ObservableObject {
 
     // MARK: - Helpers
     private func parse(_ error: Error) -> String {
-        // В реальном проекте маппим ошибки сервиса на user-friendly текст
         if let apiError = error as? APIError {
             return apiError.localizedDescription
         }

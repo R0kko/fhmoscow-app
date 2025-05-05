@@ -60,11 +60,9 @@ final class AppState: ObservableObject {
         Task { await bootstrapAsync() }
     }
 
-    /// Асинхронная версия bootstrap для вызова из .task { await appState.bootstrapAsync() }
     func bootstrapAsync() async {
-        try? await Task.sleep(for: .milliseconds(800)) // небольшая задержка для анимации
+        try? await Task.sleep(for: .milliseconds(800))
 
-        // 1) Токен
         do {
             token = try keychain.readToken()
         } catch {
@@ -72,7 +70,6 @@ final class AppState: ObservableObject {
             token = nil
         }
 
-        // 2) Пользователь из UserDefaults (если был сохранён)
         if let data = UserDefaults.standard.data(forKey: StorageKey.user) {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
@@ -81,11 +78,9 @@ final class AppState: ObservableObject {
             }
         }
 
-        // 3) Решаем, какой экран показать
         let hasSession = (self.token != nil) && (currentUser != nil)
         route = hasSession ? .home : .auth
 
-        // 4) Подписываемся на logout‑уведомление (однократно)
         if !isLogoutObserverAttached {
             NotificationCenter.default.publisher(for: .userShouldLogout)
                 .receive(on: DispatchQueue.main)

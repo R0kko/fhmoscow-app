@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// View-model таблицы для выбранной группы внутри этапа
 @MainActor
 final class TournamentTableViewModel: ObservableObject {
 
@@ -38,7 +37,6 @@ final class TournamentTableViewModel: ObservableObject {
         await loadNext()
     }
 
-    /// Подгрузка следующей страницы, когда пользователь долистал до порога
     func loadMoreIfNeeded(current item: TableRowDTO?) async {
         guard let item else { await loadNext(); return }
 
@@ -53,7 +51,6 @@ final class TournamentTableViewModel: ObservableObject {
         }
     }
 
-    /// Сменить тип зачёта (общий / московский) и перезагрузить таблицу
     func updateStanding(isMoscow: Bool) async {
         guard moscowStanding != isMoscow else { return }
         moscowStanding = isMoscow
@@ -94,7 +91,6 @@ final class TournamentTableViewModel: ObservableObject {
             canLoadMore = rows.count < response.total
             page += 1
         } catch {
-            // В случае ошибки останавливаем пагинацию
             canLoadMore = false
             // TODO: показать алерт
         }

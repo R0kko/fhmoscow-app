@@ -30,7 +30,6 @@ struct PlayerRowDTO: Identifiable, Decodable {
     }
 }
 
-/// Уникальный маршрут для перехода к деталям игрока
 private struct PlayerRoute: Hashable {
     let id: Int
 }
@@ -60,7 +59,7 @@ struct PlayersListView: View {
                 Button("OK") { error = nil }
             }, message: { Text(error ?? "") })
             .navigationDestination(for: PlayerRoute.self) { route in
-                Text("Player #\(route.id)") // TODO: PlayerDetailView
+                PlayerDetailView(playerID: route.id, appState: appState)
             }
             .task { await fetchPlayers() }
     }
@@ -102,7 +101,6 @@ struct PlayersListView: View {
         }
     }
 
-    // MARK: - Sub‑Views
     @ViewBuilder private var playersList: some View {
         List {
             if isLoading && players.isEmpty {

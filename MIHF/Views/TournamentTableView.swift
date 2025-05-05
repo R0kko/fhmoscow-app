@@ -1,4 +1,3 @@
-// MARK: - TableRowDTO placeholder for loading skeletons
 private extension TableRowDTO {
     static var placeholder: TableRowDTO {
         .init(
@@ -21,13 +20,11 @@ private extension TableRowDTO {
 }
 import SwiftUI
 
-/// Переход к экрану команды (placeholder)
 private struct TeamRoute: Hashable {
     let id: Int
     let name: String
 }
 
-/// Экран «Турнирная таблица» для выбранной группы.
 struct TournamentTableView: View {
 
     // MARK: ‑ Input
@@ -36,13 +33,10 @@ struct TournamentTableView: View {
     let initialMoscowStanding: Bool
     private let appState: AppState
 
-    // MARK: ‑ VM
     @StateObject private var vm: TournamentTableViewModel
 
-    // MARK: - Standing Filter State
     @State private var standingFilter: Standing = .general
 
-    // MARK: ‑ Init
     init(groupId: Int,
          groupName: String,
          initialMoscowStanding: Bool = false,
@@ -60,7 +54,6 @@ struct TournamentTableView: View {
         )
     }
 
-    // MARK: - Standing Filter Enum
     private enum Standing: String, CaseIterable, Identifiable {
         case general = "Общий"
         case moscow  = "Московский"
@@ -69,10 +62,8 @@ struct TournamentTableView: View {
         var isMoscow: Bool { self == .moscow }
     }
 
-    // MARK: ‑ Body
     var body: some View {
         VStack(spacing: 0) {
-            // Segmented picker
             Picker("Standing", selection: $standingFilter) {
                 ForEach(Standing.allCases) { stand in
                     Text(stand.rawValue).tag(stand)
@@ -82,9 +73,8 @@ struct TournamentTableView: View {
             .padding([.horizontal, .top])
 
             Divider()
-                .padding(.top, 6)        // separates picker without overlap
+                .padding(.top, 6)
 
-            // Vertical list (no horizontal scroll)
             List {
                 headerRow
 
@@ -113,7 +103,8 @@ struct TournamentTableView: View {
         }
         .navigationTitle(groupName)
         .navigationDestination(for: TeamRoute.self) { route in
-            Text("Team \(route.name)") // TODO: TeamDetailView
+            TeamDetailView(teamId: route.id, teamName: route.name, appState: appState)
+                .environmentObject(appState)
         }
         .refreshable { await vm.reload() }
         .task { await vm.reload() }
@@ -134,7 +125,7 @@ struct TournamentTableView: View {
             Text("Команда")
                 .frame(minWidth: 160, alignment: .leading)
 
-            Spacer()                           // pushes "О" to right edge
+            Spacer()                         
 
             Text("О")
                 .frame(width: 40, alignment: .trailing)

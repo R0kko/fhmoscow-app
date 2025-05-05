@@ -1,12 +1,10 @@
 import SwiftUI
 
-/// Навигационный маршрут к детальной информации команды
 private struct TeamRoute: Hashable {
     let id: Int
     let name: String
 }
 
-// Helper: remove HTML tags from server‑side description
 private extension String {
     var strippedHTML: String {
         if let data = self.data(using: .utf8) {
@@ -80,13 +78,11 @@ struct ClubDetailView: View {
                             Spacer()
                         }
 
-                        // Description
                         if let desc = detail.description?.strippedHTML, !desc.isEmpty {
                             Text(desc)
                                 .font(.body)
                         }
 
-                        // Website
                         if let site = detail.site, let url = URL(string: site) {
                             Link(destination: url) {
                                 Label(site, systemImage: "link")
@@ -96,7 +92,6 @@ struct ClubDetailView: View {
 
                         Divider()
 
-                        // Teams
                         if !detail.teams.isEmpty {
                             Text("Команды")
                                 .font(.headline)

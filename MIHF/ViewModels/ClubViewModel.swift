@@ -19,8 +19,6 @@ final class ClubListViewModel: ObservableObject {
     // MARK: - Init
     init(appState: AppState) { self.appState = appState }
 
-    // MARK: - Public API -----------------------------------------------------
-
     func reload() async {
         page = 1
         clubs.removeAll()
@@ -47,8 +45,6 @@ final class ClubListViewModel: ObservableObject {
         showOnlyMoscow = isMoscow
         await reload()
     }
-
-    // MARK: - Private helpers ----------------------------------------------
 
     private func loadNext() async {
         guard !isLoading,
