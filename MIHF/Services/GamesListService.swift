@@ -37,6 +37,7 @@ struct GameRowDTO: Identifiable, Decodable {
     let stadium: StadiumShortDTO?
     let tournament: TournamentShortDTO?
     let group: GroupShortDTO?
+    let confirmed: Bool?
 
     private static let isoFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()

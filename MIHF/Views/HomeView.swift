@@ -114,7 +114,8 @@ var body: some View {
             case .refereeID:
                 RefereeIDView(uuid: appState.currentUser?.id ?? "—")
             case .refereeAssignments:
-                Text("Экран назначений в разработке")
+                RefereeGamesView(appState: appState)
+                    .environmentObject(appState)
             }
         }
     }
