@@ -1,44 +1,55 @@
-name: iOS starter workflow
+name: iOS CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  push:    { branches: [main] }
+  pull_request: { branches: [main] }
 
 jobs:
   build-and-test:
-    runs-on: macos-15      
-    env:
-      SCHEME: MIHF          
+    runs-on: macos-15
+    env: { SCHEME: MIHF }
+
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Select Xcode 16.3
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '16.3'
+    - name: Select Xcode 16.3
+      uses: maxim-lobanov/setup-xcode@v1
+      with: { xcode-version: '16.3' }
 
-      - name: Build
-        shell: bash
-        run: |
-          set -eo pipefail
+    - name: Install jq
+      run: brew install jq
 
-          if compgen -G "*.xcworkspace" >/dev/null; then
-            BUILD_FLAG="-workspace"
-            FILE_PATH=$(ls -1d *.xcworkspace | head -n1)
-          else
-            BUILD_FLAG="-project"
-            FILE_PATH=$(ls -1d *.xcodeproj | head -n1)
-          fi
-          echo "🏗  Using $BUILD_FLAG $FILE_PATH"
+    - name: Resolve workspace / project
+      id: path
+      run: |
+        if ls *.xcworkspace >/dev/null 2>&1; then
+          echo "BUILD_FLAG=-workspace" >> "$GITHUB_ENV"
+          echo "FILE_PATH=$(ls -1d *.xcworkspace | head -n1)" >> "$GITHUB_ENV"
+        else
+          echo "BUILD_FLAG=-project"   >> "$GITHUB_ENV"
+          echo "FILE_PATH=$(ls -1d *.xcodeproj   | head -n1)" >> "$GITHUB_ENV"
+        fi
 
-          DEVICE_ID=$(xcrun simctl list devices available |
-                      awk -F'[()]' '/iPhone/{gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2; exit}')
-          echo "📱  Using simulator $DEVICE_ID"
+    - name: Pick simulator UDID
+      id: sim
+      run: |
+        set -eo pipefail
+        JSON=$(xcodebuild -scheme "$SCHEME" $BUILD_FLAG "$FILE_PATH" -showdestinations -json)
+        DEVICE_ID=$(echo "$JSON" | jq -r '.available[]
+          | select(.platform=="iOS Simulator" and .isAvailable and (.name | startswith("iPhone")))
+          | .udid' | head -n1)
+        if [ -z "$DEVICE_ID" ]; then
+          echo "::error::No suitable iPhone simulator found"; exit 1
+        fi
+        echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
-          xcodebuild \
-            build-for-testing \
-            "$BUILD_FLAG" "$FILE_PATH" \
-            -scheme "$SCHEME" \
-            -destination "id=$DEVICE_ID"
+    - name: Build
+      run: |
+        set -eo pipefail
+        xcrun simctl boot "$DEVICE_ID" || true
+        xcrun simctl list devices | grep "$DEVICE_ID"
+        xcodebuild \
+          build-for-testing \
+          $BUILD_FLAG "$FILE_PATH" \
+          -scheme "$SCHEME" \
+          -destination "id=$DEVICE_ID"
