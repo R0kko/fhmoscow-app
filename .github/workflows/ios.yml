@@ -8,9 +8,9 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-15   
+    runs-on: macos-15      
     env:
-      SCHEME: MIHF 
+      SCHEME: MIHF          
     steps:
       - uses: actions/checkout@v4
 
@@ -31,16 +31,14 @@ jobs:
             BUILD_FLAG="-project"
             FILE_PATH=$(ls -1d *.xcodeproj | head -n1)
           fi
-
-          echo "Found Xcode file: $FILE_PATH"
+          echo "🏗  Using $BUILD_FLAG $FILE_PATH"
 
           DEVICE_ID=$(xcrun simctl list devices available |
-                      awk '/iPhone/ { gsub(/[()]/,""); print $NF; exit }')
-
-          echo "Using simulator: $DEVICE_ID"
+                      awk -F'[()]' '/iPhone/{gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2; exit}')
+          echo "📱  Using simulator $DEVICE_ID"
 
           xcodebuild \
             build-for-testing \
-            $BUILD_FLAG "$FILE_PATH" \
+            "$BUILD_FLAG" "$FILE_PATH" \
             -scheme "$SCHEME" \
             -destination "id=$DEVICE_ID"
