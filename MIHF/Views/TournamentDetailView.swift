@@ -93,7 +93,6 @@ struct TournamentDetailView: View {
                         }
                         Divider()
 
-                        // Tournament fields
                         VStack(alignment: .leading, spacing: 8) {
                             if let t = detail.type {
                                 FieldRow(title: "Тип", value: t, systemImage: "sportscourt")
@@ -113,7 +112,6 @@ struct TournamentDetailView: View {
                         Divider()
                             .padding(.top, 4)
 
-                        // Stages
                         if !detail.stages.isEmpty {
                             Text("Этапы")
                                 .font(.headline)
@@ -141,9 +139,9 @@ struct TournamentDetailView: View {
                                             .foregroundColor(.secondary)
                                     }
                                     .padding(.vertical, 4)
-                                    .contentShape(Rectangle())                   // tap area full width
+                                    .contentShape(Rectangle())                  
                                 }
-                                .buttonStyle(PlainButtonStyle())                // removes blue tint
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                     }
@@ -174,7 +172,7 @@ private struct FieldRow: View {
             Image(systemName: systemImage)
                 .symbolRenderingMode(.hierarchical)
                 .font(.system(size: 20))
-                .frame(width: 24)                       // fixed icon column
+                .frame(width: 24)
                 .foregroundColor(.accentColor)
 
             VStack(alignment: .leading, spacing: 2) {

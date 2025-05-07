@@ -32,7 +32,11 @@ struct GameDetailView: View {
     @State private var selectedLineup = 0
     @Environment(\.openURL) private var openURL
 
-    private enum Tab: Hashable { case events, broadcast, lineups }
+    private enum Tab: Hashable { case events, broadcast, lineups, referees }
+
+    private var isCurrentUserReferee: Bool {
+        appState.currentUser?.roles.contains { $0.alias.uppercased() == "REFEREE" } ?? false
+    }
 
     init(gameId: Int, appState: AppState) {
         self.gameId = gameId
@@ -58,6 +62,12 @@ struct GameDetailView: View {
                         lineupsTab()
                             .tag(Tab.lineups)
                             .tabItem { Label("Составы", systemImage: "person.3") }
+
+                        if isCurrentUserReferee {
+                            refereesTab()
+                                .tag(Tab.referees)
+                                .tabItem { Label("Судьи", systemImage: "person.crop.rectangle.stack") }
+                        }
                     }
                 }
             } else if vm.isLoading {
@@ -106,7 +116,7 @@ private extension GameDetailView {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal)
-        .padding(.bottom, 16)   // дополнительный отступ после названия арены
+        .padding(.bottom, 16)
     }
 
     func dateString(_ iso: String) -> String {
@@ -307,14 +317,12 @@ private extension GameDetailView {
         if let urlStr = g.broadcast, let url = URL(string: urlStr) {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Видео‑плеер
                     WebVideoView(url: url)
                         .aspectRatio(CGSize(width: 16, height: 9), contentMode: .fit)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .shadow(radius: 4)
 
-                    // Кнопка «Открыть в Safari»
                     Button {
                         openURL(url)
                     } label: {
@@ -371,6 +379,61 @@ private extension GameDetailView {
             .background(Color(uiColor: .systemGroupedBackground))
         }
     }
+
+    // MARK: – Referees tab
+    @ViewBuilder
+    func refereesTab() -> some View {
+        if vm.referees.isEmpty {
+            ContentUnavailableView("Судьи не назначены",
+                                   systemImage: "person.crop.rectangle.badge.xmark")
+        } else {
+            List {
+                ForEach(groupedReferees, id: \.0) { role, refs in
+                    Section(role) {
+                        ForEach(refs) { ref in
+                            HStack {
+                                AsyncImage(url: URL(string: ref.photo_url ?? "")) { phase in
+                                    switch phase {
+                                    case .success(let img): img.resizable()
+                                    default:
+                                        Image(systemName: "person.crop.circle")
+                                            .resizable()
+                                            .foregroundColor(.gray.opacity(0.4))
+                                    }
+                                }
+                                .frame(width: 36, height: 36)
+                                .clipShape(Circle())
+
+                                Text(ref.full_name)
+                                    .lineLimit(1)
+
+                                Spacer()
+
+                                if let phone = ref.phone {
+                                    let digits = phone.filter { $0.isNumber }
+                                    if let url = URL(string: "tel://\(digits)") {
+                                        Button {
+                                            openURL(url)
+                                        } label: {
+                                            Image(systemName: "phone")
+                                        }
+                                    }
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+        }
+    }
+
+    private var groupedReferees: [(String, [RefereeRowDTO])] {
+        Dictionary(grouping: vm.referees, by: { $0.role })
+            .map { ($0.key, $0.value) }
+            .sorted { $0.0 < $1.0 }
+    }
 }
 
 extension View {
@@ -422,7 +485,6 @@ private struct LineupRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // photo / placeholder
             AsyncImage(url: URL(string: player.photoURL ?? "")) { phase in
                 switch phase {
                 case .success(let img): img.resizable()
@@ -435,7 +497,6 @@ private struct LineupRow: View {
             .frame(width: 40, height: 40)
             .clipShape(Circle())
 
-            // jersey number, if any
             if let num = player.number {
                 Text(String(num))
                     .font(.caption.bold())

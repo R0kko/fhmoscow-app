@@ -16,8 +16,6 @@ final class TeamListViewModel: ObservableObject {
 
     init(appState: AppState) { self.appState = appState }
 
-    // MARK: API
-    /// Полная перезагрузка списка (pull‑to‑refresh или смена фильтров)
     func reload() async {
         guard !isLoading else { return }
         page = 1
@@ -96,9 +94,6 @@ final class TeamDetailViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Computed helpers for the View -------------------------------
-
-    /// Игроки, отсортированные по игровому номеру (null‑в конце)
     var playersSorted: [TeamDetailDTO.Player] {
         guard let detail else { return [] }
         return detail.players.sorted {
@@ -108,7 +103,6 @@ final class TeamDetailViewModel: ObservableObject {
         }
     }
 
-    /// Сгруппировать игроков по амплуа
     var playersByPosition: [(key: String, items: [TeamDetailDTO.Player])] {
         Dictionary(grouping: playersSorted, by: { $0.position ?? "—" })
             .map { ($0.key, $0.value) }

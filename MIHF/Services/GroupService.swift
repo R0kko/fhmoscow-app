@@ -38,7 +38,6 @@ enum GroupService {
         token: String?
     ) async throws -> GroupsListResponse {
 
-        // Формируем URL
         var comps = URLComponents(url: API.base.appendingPathComponent("groups"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
             URLQueryItem(name: "stageId", value: String(stageId)),
@@ -52,7 +51,6 @@ enum GroupService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        // Логируем в DEBUG
         #if DEBUG
         print("➡️ [Groups] GET", request.url?.absoluteString ?? "")
         #endif

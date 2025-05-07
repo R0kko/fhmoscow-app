@@ -58,8 +58,6 @@ struct ClubDetailDTO: Decodable {
     }
 }
 
-// MARK: - Service -----------------------------------------------------------
-
 enum ClubsService {
 
     /// Список клубов

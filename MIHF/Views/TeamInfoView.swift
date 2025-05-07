@@ -1,6 +1,5 @@
 import SwiftUI
 
-// MARK: - Routing helpers
 private struct TeamRoute: Hashable {
     let id: Int
     let name: String
@@ -11,7 +10,6 @@ private struct PlayerRoute: Hashable {
     let name: String
 }
 
-// MARK: - TEAM LIST ----------------------------------------------------------
 struct TeamListView: View {
 
     @EnvironmentObject private var appState: AppState
@@ -166,7 +164,6 @@ struct TeamDetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
 
-                        // Header
                         HStack(spacing: 12) {
                             AsyncImage(url: URL(string: detail.logoUrl ?? "")) { phase in
                                 switch phase {
@@ -192,7 +189,6 @@ struct TeamDetailView: View {
 
                         Divider()
 
-                        // Players grouped by position
                         if !vm.playersByPosition.isEmpty {
                             Text("Игроки")
                                 .font(.headline)
@@ -256,13 +252,12 @@ struct TeamDetailView: View {
         .task { await vm.load() }
     }
 
-    // Person row (player / staff)
     private struct PersonRow: View {
         let fullName: String
-        let subtitle: String?      // position / category / birth
+        let subtitle: String?
         let photoUrl: String?
         let number: Int?
-        let showChevron: Bool      // arrow for navigable rows
+        let showChevron: Bool  
 
         var body: some View {
             HStack(spacing: 12) {

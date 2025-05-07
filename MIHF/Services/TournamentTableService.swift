@@ -3,7 +3,7 @@ import Foundation
 // MARK: - DTOs
 /// Одна строка турнирной таблицы
 struct TableRowDTO: Identifiable, Decodable {
-    let id = UUID()                   // локальный id для SwiftUI
+    let id = UUID()                   
     let teamId: Int
     let shortName: String
     let logo: String?
@@ -37,7 +37,6 @@ struct TableRowDTO: Identifiable, Decodable {
     }
 }
 
-/// Ответ от `/tournamentTables`
 struct TablesListResponse: Decodable {
     let data: [TableRowDTO]
     let total: Int

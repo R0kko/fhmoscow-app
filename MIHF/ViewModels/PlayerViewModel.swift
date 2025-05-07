@@ -107,7 +107,7 @@ final class PlayerViewModel: ObservableObject {
     private static let displayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = .current
-        f.dateFormat = "d MMMM yyyy"     // 1 января 2008
+        f.dateFormat = "d MMMM yyyy" 
         return f
     }()
 }

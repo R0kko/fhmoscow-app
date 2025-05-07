@@ -1,4 +1,15 @@
+
 import Foundation
+
+// MARK: - DTO
+
+struct RefereeRowDTO: Decodable, Identifiable {
+    let id: Int
+    let full_name: String
+    let role: String
+    let phone: String?
+    let photo_url: String?
+}
 
 // MARK: - Сервис
 
@@ -49,7 +60,6 @@ enum RefereesService {
         }
     }
 
-    // MARK: - Internal helpers
     /// Выполнить запрос, где сервер отвечает 204 (No Content).
     /// Считаем успехом любой статус‑код 2xx; иначе бросаем ошибку.
     private static func performExpectingNoContent(_ request: URLRequest) async throws {
@@ -62,8 +72,6 @@ enum RefereesService {
                           userInfo: [NSLocalizedDescriptionKey: "Server error \(http.statusCode)"])
         }
     }
-
-    // MARK: 2. Подтвердить назначение
 
     /// PATCH `/referees/games/{gameId}/confirm`
     ///
@@ -97,8 +105,6 @@ enum RefereesService {
         }
     }
 
-    // MARK: 3. Отозвать подтверждение
-
     /// PATCH `/referees/games/{gameId}/unconfirm`
     ///
     /// - Parameters:
@@ -129,9 +135,37 @@ enum RefereesService {
             #endif
             throw error
         }
+
+    }
+
+    /// GET `/referees/games/{gameId}/referees`
+    static func refereesForGame(gameId: Int,
+                                token: String) async throws -> [RefereeRowDTO] {
+
+        let url = API.base
+            .appendingPathComponent("referees/games/\(gameId)/referees")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        #if DEBUG
+        print("➡️ [Referee] GET \(url.path) — list referees")
+        #endif
+
+        do {
+            let rows = try await API.perform(request: request,
+                                             decodeAs: [RefereeRowDTO].self)
+            #if DEBUG
+            print("✅ [Referee] referees count:", rows.count)
+            #endif
+            return rows
+        } catch {
+            #if DEBUG
+            print("❌ [Referee] referees error:", error.localizedDescription)
+            #endif
+            throw error
+        }
     }
 }
 
-// MARK: - Вспомогательные типы
-
-private struct EmptyDTO: Decodable {}

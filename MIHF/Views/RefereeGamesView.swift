@@ -78,7 +78,6 @@ struct RefereeGamesView: View {
                 }
                 .onAppear { Task { await vm.loadMoreIfNeeded(current: game) } }
 
-            // Invisible link without chevron
             NavigationLink(value: GameRoute(id: game.id)) {
                 EmptyView()
             }

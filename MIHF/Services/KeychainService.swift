@@ -15,7 +15,6 @@ struct KeychainService {
     func save(token: String) throws {
         let data = Data(token.utf8)
 
-        // Сначала пробуем обновить, если уже есть
         let query: [CFString: Any] = [
             kSecClass:           kSecClassGenericPassword,
             kSecAttrService:     service,
@@ -26,7 +25,6 @@ struct KeychainService {
         let status = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
 
         if status == errSecItemNotFound {
-            // если нет — добавляем
             var addQuery = query
             addQuery[kSecValueData] = data
             let addStatus = SecItemAdd(addQuery as CFDictionary, nil)

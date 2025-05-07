@@ -108,7 +108,7 @@ struct TournamentTableView: View {
         }
         .refreshable { await vm.reload() }
         .task { await vm.reload() }
-        .onChange(of: standingFilter) { newValue in
+        .onChange(of: standingFilter) { _, newValue in
             Task { await vm.updateStanding(isMoscow: newValue.isMoscow) }
         }
     }
@@ -120,12 +120,12 @@ struct TournamentTableView: View {
             Text("#")
                 .frame(width: 24, alignment: .center)
 
-            Spacer().frame(width: 32)          // logo placeholder width
+            Spacer().frame(width: 32)
 
             Text("Команда")
                 .frame(minWidth: 160, alignment: .leading)
 
-            Spacer()                         
+            Spacer()
 
             Text("О")
                 .frame(width: 40, alignment: .trailing)
@@ -168,7 +168,7 @@ private struct TableRowView: View {
 
                     Spacer()
 
-                    numeric(row.score)               // очки справа
+                    numeric(row.score)              
                 }
                 .padding(.vertical, 4)
             }
@@ -213,40 +213,6 @@ private struct TableRowView: View {
     }
 }
 
-#if DEBUG
-#Preview {
-    let sample = TableRowDTO(
-        teamId: 1,
-        shortName: "ХК Москва",
-        logo: nil,
-        gameCount: 6,
-        winCount: 5,
-        tieCount: 0,
-        lossCount: 1,
-        winOvertimeCount: 0,
-        loseOvertimeCount: 0,
-        pucksScored: 30,
-        pucksMissed: 10,
-        pucksDifference: 20,
-        score: 10,
-        position: 1
-    )
-    return NavigationStack {
-        TournamentTableView(
-            groupId: 1,
-            groupName: "Группа A",
-            initialMoscowStanding: false,
-            appState: AppState()
-        )
-        .environment(\.sizeCategory, .medium)
-        .onAppear {
-            // inject sample data for preview
-        }
-    }
-}
-#endif
-
-// Simple shimmer effect
 private extension View {
     func shimmering() -> some View {
         self

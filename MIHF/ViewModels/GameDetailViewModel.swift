@@ -24,23 +24,27 @@ final class GameDetailViewModel: ObservableObject {
     @Published private(set) var lineupTeam2: GameLineupDTO?
     @Published private(set) var isLoading = false
     @Published private(set) var error: String?
+    @Published private(set) var referees: [RefereeRowDTO] = []
 
     // MARK: – Dependencies
     private let gameID: Int
     private let appState: AppState
     private let service: (Int, String?) async throws -> GameDetailDTO
     private let lineupService: (Int, String?) async throws -> GameLineupsResponse
+    private let refereesService: (Int, String) async throws -> [RefereeRowDTO]
 
     // MARK: – Init
     init(gameID: Int,
          appState: AppState,
          service:        @escaping (Int, String?) async throws -> GameDetailDTO        = GameInfoService.detail,
-         lineupService:  @escaping (Int, String?) async throws -> GameLineupsResponse = GameInfoService.lineups) {
+         lineupService:  @escaping (Int, String?) async throws -> GameLineupsResponse = GameInfoService.lineups,
+         refereesService:@escaping (Int, String)  async throws -> [RefereeRowDTO]     = RefereesService.refereesForGame) {
 
         self.gameID        = gameID
         self.appState      = appState
         self.service       = service
         self.lineupService = lineupService
+        self.refereesService = refereesService
     }
 
     // MARK: – Intent
@@ -74,18 +78,27 @@ final class GameDetailViewModel: ObservableObject {
                 .compactMap { event in
                     guard !hiddenTypes.contains(event.typeId) else { return nil }
                     if event.typeId == 8 {
-                        var copy = event
+                        let copy = event
                         return copy
                     }
                     return event
                 }
                 .sorted {
-                    // sort by minute, then second
                     if let m1 = $0.minute, let m2 = $1.minute, m1 != m2 {
                         return m1 < m2
                     }
                     return ($0.second ?? 0) < ($1.second ?? 0)
                 }
+
+            if let token = appState.token {
+                do {
+                    referees = try await refereesService(gameID, token)
+                } catch {
+                    #if DEBUG
+                    print("⚠️ [Game] referees load error:", error.localizedDescription)
+                    #endif
+                }
+            }
 
             error = nil
         } catch {

@@ -13,10 +13,10 @@ struct AuthView: View {
     @State private var shake = false
     private let gradient = LinearGradient(
         gradient: Gradient(stops: [
-            .init(color: Color(hex: 0x122859).opacity(0.5), location: 0),            // Dark blue
-            .init(color: Color(hex: 0x0E3869).opacity(0.5), location: 0.1),         // Blue
-            .init(color: Color(hex: 0x459EDB).opacity(0.5), location: 0.7),         // Light blue
-            .init(color: Color(hex: 0xC5181D, alpha: 0.25), location: 1) // Subtle red tint
+            .init(color: Color(hex: 0x122859).opacity(0.5), location: 0),
+            .init(color: Color(hex: 0x0E3869).opacity(0.5), location: 0.1),
+            .init(color: Color(hex: 0x459EDB).opacity(0.5), location: 0.7),
+            .init(color: Color(hex: 0xC5181D, alpha: 0.25), location: 1)
         ]),
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -38,7 +38,6 @@ struct AuthView: View {
             VStack {
                 Spacer(minLength: 60)
 
-                // Card
                 VStack(spacing: 20) {
                     title
                     phoneField
@@ -156,7 +155,6 @@ struct AuthView: View {
     private func login() {
         hideKeyboard()
         didAttempt = true
-        // локальная валидация до запроса
         if !canSubmit {
             withAnimation { shake.toggle() }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -240,11 +238,9 @@ private extension View {
 private extension AuthView {
     func formatPhone(_ value: String) -> String {
         let digits = value.filter { $0.isNumber }
-        // Ensure starts with 7
         let withoutFirst = digits.hasPrefix("8") ? "7" + digits.dropFirst() : digits
         let normalized = withoutFirst.hasPrefix("7") ? withoutFirst : "7" + withoutFirst
         let limited = String(normalized.prefix(11))
-        // Format as +7 (XXX) XXX-XX-XX
         var result = "+7"
         let numbers = limited.dropFirst()
         let chars = Array(numbers)

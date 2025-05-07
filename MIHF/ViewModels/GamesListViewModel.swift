@@ -21,7 +21,6 @@ final class GamesListViewModel: ObservableObject {
     @Published var page = 1
     @Published var canLoadMore = true
 
-    /// Активные фильтры
     @Published var filter = GamesFilter()
 
     // MARK: - Dependencies
@@ -41,7 +40,6 @@ final class GamesListViewModel: ObservableObject {
     }
 
     func apply(filters: GamesFilter) async {
-        // Если фильтры реально изменились – перезагружаем
         guard filters != filter else { return }
         filter = filters
         await reload()

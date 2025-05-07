@@ -10,19 +10,19 @@ struct PlayerDetailDTO: Decodable, Identifiable {
     let surname: String
     let name: String
     let patronymic: String?
-    let dateOfBirth: String?          // ISO-8601
+    let dateOfBirth: String?
     let email: String?
     let sex: String?
-    let photo: String?                // URL
+    let photo: String?
 
     struct TeamStat: Decodable, Identifiable {
         var id: Int { teamID }
 
-        let teamID: Int                  // team_id
-        let teamName: String             // team_name
-        let clubID: Int?                 // club_id
-        let clubName: String?            // club_name
-        let logoURL: String?             // logo_url
+        let teamID: Int
+        let teamName: String
+        let clubID: Int?
+        let clubName: String?
+        let logoURL: String?
 
         let games: Int
         let goals: Int

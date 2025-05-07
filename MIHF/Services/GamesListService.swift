@@ -78,7 +78,6 @@ enum GamesListService {
                      limit: Int = 20,
                      token: String?) async throws -> GamesListResponse {
 
-        // Формируем URL
         var comps = URLComponents(url: API.base.appendingPathComponent("/games"),
                                   resolvingAgainstBaseURL: false)!
         var items: [URLQueryItem] = [

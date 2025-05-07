@@ -79,8 +79,6 @@ final class TournamentTableViewModel: ObservableObject {
             )
 
             rows += response.data
-
-            // сортируем по очкам (score) по убыванию; при равных — по позиции
             rows.sort {
                 if $0.score == $1.score {
                     return $0.position < $1.position

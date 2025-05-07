@@ -51,15 +51,14 @@ struct GameEventDTO: Identifiable, Decodable {
     }
 
     let id: Int
-    let typeId: Int            // 2 – гол, 4 – штраф
-    let type: String           // локализованное название
+    let typeId: Int
+    let type: String
     let minute: Int?
     let second: Int?
     let period: Int?
 
     let team: GameTeamShortDTO
 
-    // players / refs (optional)
     let goalAuthor: ShortPerson?
     let assist1: ShortPerson?
     let assist2: ShortPerson?
@@ -89,10 +88,8 @@ struct GameEventDTO: Identifiable, Decodable {
 // MARK: – Line‑ups (rosters)
 struct GameLineupDTO: Decodable {
 
-    // короткое имя команды
     let shortName: String
 
-    // список игроков
     struct Player: Identifiable, Decodable {
         let id: Int
         let fullName: String
@@ -110,7 +107,6 @@ struct GameLineupDTO: Decodable {
         }
     }
 
-    // тренерский штаб
     struct Staff: Identifiable, Decodable {
         let id: Int
         let fullName: String

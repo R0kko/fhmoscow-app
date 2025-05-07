@@ -57,7 +57,7 @@ struct ClubListView: View {
                     Image(systemName: "m.circle")
                 }
                 .toggleStyle(.button)
-                .onChange(of: showMoscowOnly) { newVal in
+                .onChange(of: showMoscowOnly) { _, newVal in
                     Task { await vm.applyFilters(search: query, isMoscow: newVal) }
                 }
             }

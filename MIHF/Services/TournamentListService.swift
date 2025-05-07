@@ -1,13 +1,11 @@
 import Foundation
 
-/// DTO ответа API
 struct TournamentsListResponse: Decodable {
     let data: [TournamentRowDTO]
     let total: Int
     let page: Int?
 }
 
-/// Сервис работы со списком турниров, выполнен в стиле `PlayersListService`.
 enum TournamentListService {
     /// Получить список турниров с пагинацией и фильтрами.
     /// - Parameters:
@@ -23,7 +21,6 @@ enum TournamentListService {
                      limit: Int = 20,
                      token: String?) async throws -> TournamentsListResponse {
 
-        // Формируем URL
         var comps = URLComponents(url: API.base.appendingPathComponent("/tournaments"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
             URLQueryItem(name: "page", value: String(page)),

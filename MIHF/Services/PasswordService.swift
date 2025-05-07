@@ -1,15 +1,10 @@
 import Foundation
 
-/// Сервис, инкапсулирующий логику смены пароля.
 struct PasswordService {
-
-    /// Ошибки, возвращаемые при попытке сменить пароль.
     enum PasswordError: Error {
-        /// Неверно введён старый пароль
         case wrongOldPassword
     }
 
-    /// Ошибки транспортного уровня (связь с сервером).
     enum ServiceError: Error {
         case noConnection
         case server(status: Int)

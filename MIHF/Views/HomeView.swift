@@ -4,6 +4,8 @@ struct HomeView: View {
     // MARK: - Dependencies
     @EnvironmentObject private var appState: AppState
     @State private var isAppeared = false
+    @State private var docs: [DocumentRowDTO] = []
+    @State private var docsLoading = false
 
     private enum Route: Hashable {
         case profile
@@ -11,6 +13,7 @@ struct HomeView: View {
         case tournaments
         case clubs
         case games
+        case documents
         case refereeID
         case refereeAssignments
     }
@@ -87,13 +90,16 @@ var body: some View {
                     .font(.title3.weight(.semibold))
                     .foregroundColor(brandText)
                 menuGrid
-                placeholderArea
+                documentsSection
             }
             .padding(.horizontal)
             .scaleEffect(isAppeared ? 1 : 0.95)
             .opacity(isAppeared ? 1 : 0)
             .animation(.easeOut(duration: 0.4), value: isAppeared)
-            .onAppear { isAppeared = true }
+            .onAppear {
+                isAppeared = true
+                if docs.isEmpty { Task { await loadDocuments() } }
+            }
         }
         .background(brandBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
@@ -110,6 +116,9 @@ var body: some View {
                     .environmentObject(appState)
             case .games:
                 GamesListView(appState: appState)
+                    .environmentObject(appState)
+            case .documents:
+                DocumentsListView(appState: appState)
                     .environmentObject(appState)
             case .refereeID:
                 RefereeIDView(uuid: appState.currentUser?.id ?? "—")
@@ -180,19 +189,62 @@ var body: some View {
         .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
     }
 
-    private var placeholderArea: some View {
+
+    // MARK: – Documents widget
+    private var documentsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Документы")
-                .font(.title3.weight(.semibold))
-                .foregroundColor(brandText)
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white)
-                .frame(height: 160)
-                .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
-                .overlay(
-                    Text("Плейсхолдер под виджеты / ленту")
-                        .foregroundColor(brandText.opacity(0.6))
+            HStack {
+                Text("Документы")
+                    .font(.title3.weight(.semibold))
+                    .foregroundColor(brandText)
+                Spacer()
+                NavigationLink(value: Route.documents) {
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(brandAccent)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+
+            if docsLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 140)
+            } else if docs.isEmpty {
+                Text("Нет документов")
+                    .foregroundColor(brandText.opacity(0.6))
+                    .frame(maxWidth: .infinity, minHeight: 140)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
+                    )
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(docs) { doc in
+                        Link(destination: URL(string: doc.url)!) {
+                            HStack {
+                                Image(systemName: "doc.text")
+                                    .foregroundColor(brandAccent)
+                                Text(doc.name ?? "Документ \(doc.id)")
+                                    .foregroundColor(brandText)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        if doc.id != docs.last?.id {
+                            Divider()
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white)
+                        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
                 )
+            }
         }
         .padding(.top, 8)
     }
@@ -214,6 +266,20 @@ var body: some View {
         case .tournaments: return .tournaments
         case .clubs:       return .clubs
         case .games:       return .games
+        }
+    }
+
+    // MARK: – Load documents
+    @MainActor
+    private func loadDocuments() async {
+        guard !docsLoading else { return }
+        docsLoading = true
+        defer { docsLoading = false }
+        do {
+            let resp = try await DocumentService.list(limit: 5, token: appState.token)
+            docs = resp.data
+        } catch {
+            // silently ignore
         }
     }
 }

@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Экран со списком игр (матчей) + фильтры
 struct GamesListView: View {
 
     // MARK: – Dependencies
@@ -125,9 +124,7 @@ struct GamesListView: View {
         do {
             let resp = try await TeamInfoService.list(limit: 100, token: token)
             teams = resp.data.sorted { $0.shortName < $1.shortName }
-        } catch {
-            // silently ignore for picker
-        }
+        } catch {        }
     }
 }
 

@@ -22,7 +22,6 @@ enum SeasonService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        // Прямой decode массива DTO
         return try await API.perform(request: request, decodeAs: [SeasonDTO].self)
     }
 }

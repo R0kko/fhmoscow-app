@@ -91,7 +91,6 @@ struct ChangePasswordView: View {
 
     @MainActor
     private func save() async {
-        // Базовая валидация полей
         guard !oldPwd.isEmpty,
               newPwd == confirmPwd,
               strength == .medium || strength == .strong else {
