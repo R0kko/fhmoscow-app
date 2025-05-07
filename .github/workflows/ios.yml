@@ -16,14 +16,22 @@ jobs:
 
       - name: Build & test
         run: |
-          SCHEME='MIHF'           # <- впишите вашу схему руками
-          DESTINATION="$(xcrun xctrace list devices 2>&1 | \
-                         awk -F'[()]' '/iPhone/{print $1; exit}' | \
-                         sed 's/ *$//')"
-          FILE=$(ls *.xcworkspace 2>/dev/null || ls *.xcodeproj)
+          SCHEME='MIHF'
+
+          DESTINATION=$(xcrun xctrace list devices 2>&1 |
+                         awk -F'[()]' '/iPhone/{print $1; exit}' |
+                         sed 's/ *$//')
+
+          if compgen -G "*.xcworkspace" >/dev/null; then
+            BUILD_FLAG="-workspace"
+            FILE_PATH=$(ls -1d *.xcworkspace | head -n1)
+          else
+            BUILD_FLAG="-project"
+            FILE_PATH=$(ls -1d *.xcodeproj | head -n1)
+          fi
 
           xcodebuild \
             build-for-testing \
             -scheme "$SCHEME" \
-            -destination "platform=iOS Simulator,name=$DESTINATION" \
-            -workspace "$FILE" # или -project, если нет workspace
+            "$BUILD_FLAG" "$FILE_PATH" \
+            -destination "platform=iOS Simulator,name=$DESTINATION"
