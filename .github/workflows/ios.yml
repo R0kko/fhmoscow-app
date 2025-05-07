@@ -16,9 +16,6 @@ jobs:
       uses: maxim-lobanov/setup-xcode@v1
       with: { xcode-version: '16.3' }
 
-    - name: Install jq
-      run: brew install jq
-
     - name: Resolve workspace / project
       id: path
       run: |
@@ -30,26 +27,10 @@ jobs:
           echo "FILE_PATH=$(ls -1d *.xcodeproj   | head -n1)" >> "$GITHUB_ENV"
         fi
 
-    - name: Pick simulator UDID
-      id: sim
-      run: |
-        set -eo pipefail
-        JSON=$(xcodebuild -scheme "$SCHEME" $BUILD_FLAG "$FILE_PATH" -showdestinations -json)
-        DEVICE_ID=$(echo "$JSON" | jq -r '.available[]
-          | select(.platform=="iOS Simulator" and .isAvailable and (.name | startswith("iPhone")))
-          | .udid' | head -n1)
-        if [ -z "$DEVICE_ID" ]; then
-          echo "::error::No suitable iPhone simulator found"; exit 1
-        fi
-        echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
-
     - name: Build
       run: |
-        set -eo pipefail
-        xcrun simctl boot "$DEVICE_ID" || true
-        xcrun simctl list devices | grep "$DEVICE_ID"
         xcodebuild \
           build-for-testing \
-          $BUILD_FLAG "$FILE_PATH" \
+          "$BUILD_FLAG" "$FILE_PATH" \
           -scheme "$SCHEME" \
-          -destination "id=$DEVICE_ID"
+          -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.4'
